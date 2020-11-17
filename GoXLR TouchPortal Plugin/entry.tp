@@ -1,0 +1,102 @@
+{
+  "sdk": 2,
+  "version": 1,
+  "name": "GoXLR TouchPortal Plugin",
+  "id": "TP-GoXLR",
+  "configuration": {
+    "colorDark": "#59B1B6",
+    "colorLight": "#59B1B6"
+  },
+  "plugin_start_cmd": "\"%TP_PLUGIN_FOLDER%GoXLR\\GoXLR.Worker.exe\"",
+  "categories": [
+    {
+      "id": "TPGoXLRCommands",
+      "name": "GoXLR",
+      "imagepath": "%TP_PLUGIN_FOLDER%GoXLR\\test.png",
+      "actions": [
+        {
+          "id": "tpgoxlr_route_change",
+          "prefix": "GoXLR",
+          "name": "GoXLR Routing Table Change",
+          "type": "communicate",
+          "format": "Input {$tpgoxlr_input$} Output {$tpgoxlr_output$} Action {$tpgoxlr_action$}",
+          "data": [
+            {
+              "id": "tpgoxlr_input",
+              "type": "choice",
+              "label": "Input",
+              "default": "Mic",
+              "valueChoices": [
+                "Mic",
+                "Music",
+                "Game",
+                "Console",
+                "Line In",
+                "System",
+                "Samples"
+              ]
+            },
+            {
+              "id": "tpgoxlr_output",
+              "type": "choice",
+              "label": "Output",
+              "default": "Headphones",
+              "valueChoices": [
+                "Headphones",
+                "Broadcast Mix",
+                "Line Out",
+                "Chat Mic",
+                "Sampler"
+              ]
+            },
+            {
+              "id": "tpgoxlr_action",
+              "type": "choice",
+              "label": "Action",
+              "default": "Turn On",
+              "valueChoices": [
+                "Turn On",
+                "Turn Off",
+                "Toggle"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tpgoxlr_profile_change_manual",
+          "prefix": "GoXLR",
+          "name": "GoXLR Profile Change Text",
+          "type": "communicate",
+          "format": "Profile {$tpgoxlr_profile_manual$}",
+          "data": [
+            {
+              "id": "tpgoxlr_profile_manual",
+              "type": "text",
+              "label": "Profile",
+              "default": ""
+            }
+          ]
+        },
+        {
+          "id": "tpgoxlr_profile_change_auto",
+          "prefix": "GoXLR",
+          "name": "GoXLR Profile Select",
+          "type": "communicate",
+          "tryInline": true,
+          "format": "Profile {$tpgoxlr_profile_auto$}",
+          "data": [
+            {
+              "id": "tpgoxlr_profile_auto",
+              "type": "choice",
+              "label": "Profile",
+              "default": "",
+              "valueChoices": []
+            }
+          ]
+        }
+      ],
+      "events": [],
+      "states": []
+    }
+  ]
+}

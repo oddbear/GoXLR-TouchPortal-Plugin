@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30711.63
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GoXLR.Worker", "GoXLR TouchPortal Plugin\GoXLR.Worker.csproj", "{05324A5A-A068-4350-9C2D-454D5848EAE4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{05324A5A-A068-4350-9C2D-454D5848EAE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05324A5A-A068-4350-9C2D-454D5848EAE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05324A5A-A068-4350-9C2D-454D5848EAE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05324A5A-A068-4350-9C2D-454D5848EAE4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4B25238C-449C-458C-B8A7-AA32048D0BD8}
+	EndGlobalSection
+EndGlobal
