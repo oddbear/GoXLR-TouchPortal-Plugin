@@ -5,7 +5,11 @@ VisualStudioVersion = 16.0.30711.63
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GoXLR.Worker", "GoXLR TouchPortal Plugin\GoXLR.Worker.csproj", "{05324A5A-A068-4350-9C2D-454D5848EAE4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GoXLR.Models", "GoXLR.Models\GoXLR.Models.csproj", "{F51ECBBC-8078-4D85-A0C4-1DA2537B6532}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GoXLR.Models", "GoXLR.Models\GoXLR.Models.csproj", "{F51ECBBC-8078-4D85-A0C4-1DA2537B6532}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GoXLR.Desktop", "GoXLR.Desktop\GoXLR.Desktop.csproj", "{6919485E-3367-494A-B9E4-8DBADCC0FD1F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GoXLR.Simulator", "GoXLR.Simulator\GoXLR.Simulator.csproj", "{0339F59C-BFCC-43AD-88A3-D71C5ED2EB71}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,14 @@ Global
 		{F51ECBBC-8078-4D85-A0C4-1DA2537B6532}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F51ECBBC-8078-4D85-A0C4-1DA2537B6532}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F51ECBBC-8078-4D85-A0C4-1DA2537B6532}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6919485E-3367-494A-B9E4-8DBADCC0FD1F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6919485E-3367-494A-B9E4-8DBADCC0FD1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6919485E-3367-494A-B9E4-8DBADCC0FD1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6919485E-3367-494A-B9E4-8DBADCC0FD1F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0339F59C-BFCC-43AD-88A3-D71C5ED2EB71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0339F59C-BFCC-43AD-88A3-D71C5ED2EB71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0339F59C-BFCC-43AD-88A3-D71C5ED2EB71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0339F59C-BFCC-43AD-88A3-D71C5ED2EB71}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

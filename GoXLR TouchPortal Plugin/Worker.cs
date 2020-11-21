@@ -79,7 +79,7 @@ namespace GoXLR_TouchPortal_Plugin
                     _messageProcessor.UpdateChoice(new ChoiceUpdate
                     {
                         Id = "tpgoxlr_profile_auto",
-                        Value = response?.Payload.Profiles ?? new [] { "bah!" }
+                        Value = response?.Payload.Profiles ?? new [] { "No profiles!" }
                     });
                 }
                 catch (Exception e)
