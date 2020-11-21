@@ -13,6 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\GoXLR.Models\GoXLR.Models.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="entry.tp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
