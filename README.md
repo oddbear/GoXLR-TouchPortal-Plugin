@@ -8,7 +8,9 @@ The plugin therefor supports:
 
 ### Setup:
 Download .NET Runtime 5.0.0 from https://dotnet.microsoft.com/download/dotnet/5.0
+
 Install tpp file from TouchPortal or unzip .tpp file to: `%appdata%\TouchPortal\plugins\GoXLR`
+
 This folder should then contain the `GoXLR.Worker.exe and` `entry.tp`
 
 ### Configuration
