@@ -11,8 +11,9 @@ using TouchPortalApi.Interfaces;
 using TouchPortalApi.Models;
 using WatsonWebsocket;
 using System.Linq;
-using GoXLR_TouchPortal_Plugin.Models;
 using System.Text.Json;
+using GoXLR.Models.Models;
+using GoXLR.Models.Models.Payloads;
 
 namespace GoXLR_TouchPortal_Plugin
 {
@@ -78,7 +79,7 @@ namespace GoXLR_TouchPortal_Plugin
                     _messageProcessor.UpdateChoice(new ChoiceUpdate
                     {
                         Id = "tpgoxlr_profile_auto",
-                        Value = response?.Payload.Profiles ?? new [] { "bah!" }
+                        Value = response?.Payload.Profiles ?? new [] { "No profiles!" }
                     });
                 }
                 catch (Exception e)
@@ -118,7 +119,7 @@ namespace GoXLR_TouchPortal_Plugin
                             case "tpgoxlr_route_change":
                             {
                                 var settings = GetRoutingSettingFromActionDataList(dataList);
-                                var routingTable = Models.SetRoutingRequest.Create(settings);
+                                var routingTable = SetRoutingRequest.Create(settings);
                                 var json = System.Text.Json.JsonSerializer.Serialize(routingTable);
                                 await _server.SendAsync(client, json, stoppingToken);
 
@@ -128,7 +129,7 @@ namespace GoXLR_TouchPortal_Plugin
                             case "tpgoxlr_profile_change_auto":
                             {
                                 var profile = dataList.Single().Value;
-                                var model = Models.SetProfileRequest.Create(profile);
+                                var model = SetProfileRequest.Create(profile);
                                 var json = System.Text.Json.JsonSerializer.Serialize(model);
                                 await _server.SendAsync(client, json, stoppingToken);
 
@@ -198,9 +199,9 @@ namespace GoXLR_TouchPortal_Plugin
             }
         }
 
-        private static Models.SetRoutingRequest.SetRoutingSettings GetRoutingSettingFromActionDataList(IEnumerable<ActionData> actionData)
+        private static SetRoutingPayload.SetRoutingSettings GetRoutingSettingFromActionDataList(IEnumerable<ActionData> actionData)
         {
-            var setting = new Models.SetRoutingRequest.SetRoutingSettings();
+            var setting = new SetRoutingPayload.SetRoutingSettings();
 
             foreach (var data in actionData)
             {
