@@ -1,18 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using GoXLR.Desktop.ViewModels.Models;
+using GoXLR.Models.Configuration;
 using GoXLR.Models.Models;
 using GoXLR.Models.Models.Payloads;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
 using WatsonWebsocket;
 
 namespace GoXLR.Desktop.ViewModels
@@ -52,13 +50,13 @@ namespace GoXLR.Desktop.ViewModels
 
             Clients = new List<string>();
 
-            Inputs = new[] { "Mic", "Music", "Game", "Console", "Line In", "System", "Samples" };
+            Inputs = Routing.Inputs;
             SelectedInput = Inputs.First();
 
-            Outputs = new[] { "Headphones", "Broadcast Mix", "Line Out", "Chat Mic", "Sampler" };
+            Outputs = Routing.Outputs;
             SelectedOutput = Outputs.First();
 
-            Actions = new[] { "Turn On", "Turn Off", "Toggle" };
+            Actions = Routing.Actions;
             SelectedAction = Actions.First();
 
             _server = new WatsonWsServer("127.0.0.1", 6805, false);

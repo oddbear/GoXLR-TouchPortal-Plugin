@@ -28,6 +28,7 @@
               "default": "Mic",
               "valueChoices": [
                 "Mic",
+                "Chat",
                 "Music",
                 "Game",
                 "Console",
