@@ -7,6 +7,7 @@ The plugin therefor supports:
 - Changes to the routing table
 
 ### Setup:
+
 Download .NET Runtime 5.0.0 from https://dotnet.microsoft.com/download/dotnet/5.0
 
 Install tpp file from TouchPortal or unzip .tpp file to: `%appdata%\TouchPortal\plugins\GoXLR`
@@ -14,21 +15,28 @@ Install tpp file from TouchPortal or unzip .tpp file to: `%appdata%\TouchPortal\
 This folder should then contain the `GoXLR.Worker.exe and` `entry.tp`
 
 ### Configuration
+
 Start TouchPortal and accept the plugin
 Start GoXLR and see that it would connect to the same PC
 
 ### Other
+
 TouchPortal with the plugin must be started before GoXLR
 If any StreamDeck changes is done in the GoXLR Global Settings, the GoXLR App could need to be restarted.
 
 ### Tooling
+
 Tooling for development, GUI Server/Client for simulating a device.
 Tooling needs .NET Desktop Runtime 5.0.0 from https://dotnet.microsoft.com/download/dotnet/5.0
 
 ### Known issues
-Unicode characters in profile names is not shown correctly.
+
+- Unicode characters in profile names is not shown correctly.
+- Cannot run at the same time as other plugins using same port.
+- Routing on and off Status not shown (planned update to the GoXLR App).
 
 ### Dependencies
 
 - [.Net TouchPortalApi](https://github.com/tlewis17/TouchPortalAPI)
 - [Watson Websocket](https://github.com/jchristn/WatsonWebsocket)
+- [Fody.PropertyChanged](https://github.com/Fody/PropertyChanged)
