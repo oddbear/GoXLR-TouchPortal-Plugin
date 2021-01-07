@@ -155,7 +155,7 @@ namespace GoXLR_TouchPortal_Plugin
             };
 
             // On List Change Event
-            _messageProcessor.OnListChangeEventHandler += (actionId, value) =>
+            _messageProcessor.OnListChangeEventHandler += (actionId, listId, instanceId, value) =>
             {
                 Console.WriteLine($"{DateTime.Now} Choice Event Fired.");
             };
