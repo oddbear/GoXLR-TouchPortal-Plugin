@@ -1,6 +1,8 @@
 # GoXLR TouchPortal Plugin (unofficial)
 A TouchPortal port of the StreamDeck plugin by using the same API from the GoXLR App.
 
+Created for **both Windows and Mac OS X** (different builds)
+
 The plugin therefor supports:
 - Get list of profiles
 - Set a specific profile
@@ -8,15 +10,17 @@ The plugin therefor supports:
 
 ### Setup:
 
-Download .NET Runtime 5.0.0 from https://dotnet.microsoft.com/download/dotnet/5.0
+Download latest .NET Runtime from (5.0.0 or higher) https://dotnet.microsoft.com/download
 
-Install tpp file from TouchPortal or unzip .tpp file to: `%appdata%\TouchPortal\plugins\GoXLR`
+Download the latest tpp file from (under assets): https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases
+
+Install tpp file from TouchPortal or unzip .tpp file to (Windows): `%appdata%\TouchPortal\plugins\GoXLR`
 
 This folder should then contain the `GoXLR.Worker.exe and` `entry.tp`
 
 ### Configuration
 
-Start TouchPortal and accept the plugin
+Start TouchPortal and accept/trust the plugin
 Start GoXLR and see that it would connect to the same PC
 
 ### Other
@@ -24,7 +28,7 @@ Start GoXLR and see that it would connect to the same PC
 TouchPortal with the plugin must be started before GoXLR
 If any StreamDeck changes is done in the GoXLR Global Settings, the GoXLR App could need to be restarted.
 
-### Tooling
+### Tooling (Windows only)
 
 Tooling for development, GUI Server/Client for simulating a device.
 Tooling needs .NET Desktop Runtime 5.0.0 from https://dotnet.microsoft.com/download/dotnet/5.0
@@ -33,6 +37,7 @@ Tooling needs .NET Desktop Runtime 5.0.0 from https://dotnet.microsoft.com/downl
 
 - Unicode characters in profile names is not shown correctly.
 - Cannot run at the same time as other plugins using same port.
+- Remote connection to another computer does not work on Windows (works on Mac OS X).
 - Routing on and off Status not shown (planned update to the GoXLR App).
 
 ### Dependencies
