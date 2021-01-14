@@ -11,6 +11,7 @@ using GoXLR.Models.Configuration;
 using GoXLR.Models.Models;
 using GoXLR.Models.Models.Payloads;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using WatsonWebsocket;
 
 namespace GoXLR.Desktop.ViewModels
@@ -42,7 +43,7 @@ namespace GoXLR.Desktop.ViewModels
 
         public string Log { get; set; }
 
-        public MainViewModel(ILogger<MainViewModel> logger)
+        public MainViewModel(ILogger<MainViewModel> logger, IOptions<WebSocketServerSettings> webSocketServerOptions)
         {
             _logger = logger;
 
@@ -59,11 +60,15 @@ namespace GoXLR.Desktop.ViewModels
             Actions = Routing.Actions;
             SelectedAction = Actions.First();
 
-            _server = new WatsonWsServer("127.0.0.1", 6805, false);
+            var serverSettings = webSocketServerOptions.Value;
+
+            _server = new WatsonWsServer(serverSettings.IpAddress, serverSettings.Port, false);
+
             _server.ClientConnected += ServerOnClientConnected;
             _server.ClientDisconnected += ServerOnClientDisconnected;
             _server.MessageReceived += ServerOnMessageReceived;
-            _server.ServerStopped += (sender, args) => _logger.LogInformation("Server Stopped");
+            _server.ServerStopped += ServerOnServerStopped;
+
             _server.Start();
         }
 
@@ -175,6 +180,13 @@ namespace GoXLR.Desktop.ViewModels
                 SelectedClient = null;
             }
             OnPropertyChanged(nameof(Clients));
+        }
+
+        private void ServerOnServerStopped(object? sender, EventArgs e)
+        {
+            var entry = "Server Stopped, port already in use, or wrong privileges?";
+            _logger.LogInformation(entry);
+            Log += $"{DateTime.Now:s} {entry}{Environment.NewLine}";
         }
 
         private void OnPropertyChanged(string propertyName)

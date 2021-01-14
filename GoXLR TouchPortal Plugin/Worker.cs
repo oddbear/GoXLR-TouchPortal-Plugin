@@ -14,6 +14,7 @@ using System.Linq;
 using System.Text.Json;
 using GoXLR.Models.Models;
 using GoXLR.Models.Models.Payloads;
+using Microsoft.Extensions.Options;
 
 namespace GoXLR_TouchPortal_Plugin
 {
@@ -25,13 +26,20 @@ namespace GoXLR_TouchPortal_Plugin
 #if !SKIP_WS
         private readonly WatsonWsServer _server;
 #endif
-        public Worker(IHostApplicationLifetime hostApplicationLifetime, ILogger<Worker> logger, IMessageProcessor messageProcessor)
+        public Worker(
+            IHostApplicationLifetime hostApplicationLifetime,
+            ILogger<Worker> logger,
+            IMessageProcessor messageProcessor,
+            IOptions<WebSocketServerSettings> options
+            )
         {
             _hostApplicationLifetime = hostApplicationLifetime;
             _logger = logger;
             _messageProcessor = messageProcessor ?? throw new ArgumentNullException(nameof(messageProcessor));
+
 #if !SKIP_WS
-            _server = new WatsonWsServer("127.0.0.1", 6805, false);
+            var serverSettings = options.Value;
+            _server = new WatsonWsServer(serverSettings.IpAddress, serverSettings.Port, false);
 #endif
         }
 

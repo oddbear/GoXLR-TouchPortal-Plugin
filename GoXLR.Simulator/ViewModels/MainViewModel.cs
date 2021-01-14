@@ -28,11 +28,30 @@ namespace GoXLR.Simulator.ViewModels
         public MainViewModel(ILogger<MainViewModel> logger)
         {
             _logger = logger;
+            Profiles = FetchProfiles();
+        }
+
+        private string FetchProfiles()
+        {
             var myDocumentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             var goXLRProfilesPath = Path.Combine(myDocumentsPath, @"GoXLR\Profiles");
-            var profiles = Directory.GetFiles(goXLRProfilesPath).Select(Path.GetFileNameWithoutExtension);
 
-            Profiles = string.Join(Environment.NewLine, profiles);
+            try
+            {
+                var profiles = Directory.GetFiles(goXLRProfilesPath).Select(Path.GetFileNameWithoutExtension);
+
+                return string.Join(Environment.NewLine, profiles);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(e.ToString());
+
+                var entry = $"Could not read profiles from '{goXLRProfilesPath}', using test profiles instead.";
+                _logger.LogInformation(entry);
+                Log += $"{DateTime.Now:s} {entry}{Environment.NewLine}";
+
+                return string.Join(Environment.NewLine, "Test profile 1", "Test profile 2", "Test profile 3");
+            }
         }
 
         public void Connect(string serverIp)
