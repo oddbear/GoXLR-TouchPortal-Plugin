@@ -1,0 +1,193 @@
+{
+  "sdk": 2,
+  "version": 1,
+  "name": "GoXLR TouchPortal Plugin",
+  "id": "oddbear.touchportal.goxlr",
+  "configuration": {
+    "colorDark": "#59B1B6",
+    "colorLight": "#59B1B6"
+  },
+  "categories": [
+    {
+      "id": "oddbear.touchportal.goxlr.single",
+      "name": "GoXLR Single",
+      "imagepath": "%TP_PLUGIN_FOLDER%GoXLR\\logo.png",
+      "actions": [
+        {
+          "id": "oddbear.touchportal.goxlr.single.routingtable.action.change",
+          "prefix": "GoXLR:",
+          "name": "GoXLR Routing Table Change",
+          "type": "communicate",
+          "format": "Input {$oddbear.touchportal.goxlr.single.routingtable.action.change.data.inputs$} Output {$oddbear.touchportal.goxlr.single.routingtable.action.change.data.outputs$} Action {$oddbear.touchportal.goxlr.single.routingtable.action.change.data.actions$}",
+          "description": "The profile to select on the GoXLR device.",
+          "data": [
+            {
+              "id": "oddbear.touchportal.goxlr.single.routingtable.action.change.data.inputs",
+              "type": "choice",
+              "label": "Input",
+              "default": "Mic",
+              "valueChoices": [
+                "Mic",
+                "Chat",
+                "Music",
+                "Game",
+                "Console",
+                "Line In",
+                "System",
+                "Samples"
+              ]
+            },
+            {
+              "id": "oddbear.touchportal.goxlr.single.routingtable.action.change.data.outputs",
+              "type": "choice",
+              "label": "Output",
+              "default": "Headphones",
+              "valueChoices": [
+                "Headphones",
+                "Broadcast Mix",
+                "Line Out",
+                "Chat Mic",
+                "Sampler"
+              ]
+            },
+            {
+              "id": "oddbear.touchportal.goxlr.single.routingtable.action.change.data.actions",
+              "type": "choice",
+              "label": "Action",
+              "default": "Turn On",
+              "valueChoices": [
+                "Turn On",
+                "Turn Off",
+                "Toggle"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.single.profiles.action.change",
+          "prefix": "GoXLR:",
+          "name": "GoXLR Profile Select",
+          "format": "Select Profile: {$oddbear.touchportal.goxlr.single.profiles.action.change.data.profiles$}",
+          "description": "The profile to select on the GoXLR device.",
+          "type": "communicate",
+          "data": [
+            {
+              "id": "oddbear.touchportal.goxlr.single.profiles.action.change.data.profiles",
+              "type": "text",
+              "label": "Profile",
+              "default": ""
+            }
+          ]
+        }
+      ],
+      "states": [
+        {
+          "id": "oddbear.touchportal.goxlr.single.clients.state.connected",
+          "type": "text",
+          "desc": "Name of the GoXLR client connected.",
+          "default": "none"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "oddbear.touchportal.goxlr.multiple",
+      "name": "GoXLR Multiple",
+      "imagepath": "%TP_PLUGIN_FOLDER%GoXLR\\logo.png",
+      "actions": [
+        {
+          "id": "oddbear.touchportal.goxlr.multiple.routingtable.action.change",
+          "prefix": "GoXLR:",
+          "name": "GoXLR Routing Table Change",
+          "type": "communicate",
+          "tryInline": true,
+          "format": "Client {$oddbear.touchportal.goxlr.multiple.routingtable.action.change.data.clients$} Input {$oddbear.touchportal.goxlr.multiple.routingtable.action.change.data.inputs$} Output {$oddbear.touchportal.goxlr.multiple.routingtable.action.change.data.outputs$} Action {$oddbear.touchportal.goxlr.multiple.routingtable.action.change.data.actions$}",
+          "description": "The routing table change on the GoXLR device.",
+          "data": [
+            {
+              "id": "oddbear.touchportal.goxlr.multiple.routingtable.action.change.data.clients",
+              "type": "choice",
+              "label": "Client",
+              "default": "default",
+              "valueChoices": [ "default" ]
+            },
+            {
+              "id": "oddbear.touchportal.goxlr.multiple.routingtable.action.change.data.inputs",
+              "type": "choice",
+              "label": "Input",
+              "default": "Mic",
+              "valueChoices": [
+                "Mic",
+                "Chat",
+                "Music",
+                "Game",
+                "Console",
+                "Line In",
+                "System",
+                "Samples"
+              ]
+            },
+            {
+              "id": "oddbear.touchportal.goxlr.multiple.routingtable.action.change.data.outputs",
+              "type": "choice",
+              "label": "Output",
+              "default": "Headphones",
+              "valueChoices": [
+                "Headphones",
+                "Broadcast Mix",
+                "Line Out",
+                "Chat Mic",
+                "Sampler"
+              ]
+            },
+            {
+              "id": "oddbear.touchportal.goxlr.multiple.routingtable.action.change.data.actions",
+              "type": "choice",
+              "label": "Action",
+              "default": "Turn On",
+              "valueChoices": [
+                "Turn On",
+                "Turn Off",
+                "Toggle"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.multiple.profiles.action.change",
+          "prefix": "GoXLR:",
+          "name": "GoXLR Profile Select",
+          "type": "communicate",
+          "tryInline": true,
+          "format": "Client {$oddbear.touchportal.goxlr.multiple.profiles.action.change.data.clients$} profile {$oddbear.touchportal.goxlr.multiple.profiles.action.change.data.profiles$}",
+          "description": "The profile to select on the GoXLR device.",
+          "data": [
+            {
+              "id": "oddbear.touchportal.goxlr.multiple.profiles.action.change.data.clients",
+              "type": "choice",
+              "label": "Client",
+              "default": "default",
+              "valueChoices": [ "default" ]
+            },
+            {
+              "id": "oddbear.touchportal.goxlr.multiple.profiles.action.change.data.profiles",
+              "type": "choice",
+              "label": "Profile",
+              "default": "",
+              "valueChoices": []
+            }
+          ]
+        }
+      ],
+      "states": [
+        {
+          "id": "oddbear.touchportal.goxlr.multiple.clients.states.count",
+          "type": "text",
+          "desc": "Number of GoXLR clients connected.",
+          "default": "0"
+        }
+      ],
+      "events": []
+    }
+  ]
+}

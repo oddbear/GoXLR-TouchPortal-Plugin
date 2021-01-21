@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <UserSecretsId>dotnet-GoXLR_TouchPortal_Plugin-D39C93F5-59EF-4347-9CBF-7E5CAE01A510</UserSecretsId>
+    <RootNamespace>GoXLR.Plugin</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\GoXLR.Shared\GoXLR.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\TouchPortalAPI\TouchPortalApi\TouchPortalApi.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="entry.tp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="test.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>
