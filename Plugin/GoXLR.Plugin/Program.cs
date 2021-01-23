@@ -26,7 +26,7 @@ namespace GoXLR.Plugin
             var serviceCollection = new ServiceCollection();
 
             //Add Logging:
-            LoggingStartup.AddLogging(serviceCollection);
+            serviceCollection.AddLogging(configure => configure.AddSimpleConsole(options => options.TimestampFormat = "[yyyy.MM.dd HH:mm:ss] "));
 
             var logger = serviceCollection
                 .BuildServiceProvider()

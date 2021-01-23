@@ -57,33 +57,31 @@ namespace GoXLR.Desktop.ViewModels
             
             _server = server;
 
-            _server.FetchedProfilesEvent = message => { UpdateProfiles(message.InstanceId, message.Profiles); };
-            _server.UpdateConnectedClientsEvent = UpdateClientState; 
-
-            //TODO: Wrong place.
-            _server.Init();
+            _server.FetchedProfilesEvent = UpdateProfiles;
+            _server.UpdateConnectedClientsEvent = UpdateClientState;
         }
 
-        public void GetProfiles(CancellationToken cancellationToken = default)
+        public void GetProfiles()
         {
             var client = SelectedClient;
 
             var instanceId = $"{client.ClientIpAddress}:{client.ClientPort}";
+
             _server.FetchProfiles(client, instanceId);
         }
 
-        public void SetProfile(CancellationToken cancellationToken = default)
+        public void SetProfile()
         {
-            var client = $"{SelectedClient.ClientIpAddress}:{SelectedClient.ClientPort}";
+            var client = SelectedClient;
 
             var profile = SelectedProfile?.ProfileName;
 
             _server.SetProfile(client, profile);
         }
 
-        public void SetRouting(CancellationToken cancellationToken = default)
+        public void SetRouting()
         {
-            var client = $"{SelectedClient.ClientIpAddress}:{SelectedClient.ClientPort}";
+            var client = SelectedClient;
 
             var action = SelectedAction;
             var input = SelectedInput;
@@ -101,14 +99,10 @@ namespace GoXLR.Desktop.ViewModels
             SelectedProfile = Profiles.FirstOrDefault();
         }
         
-        public void UpdateProfiles(string instanceId, string[] profiles)
+        public void UpdateProfiles(FetchedProfilesMessage message)
         {
-            var split = instanceId.Split(':');
-            var ip = split[0];
-            if (!int.TryParse(split[1], out var port))
-                return;
-
-            var identifier = new ClientIdentifier(ip, port);
+            var identifier = message.ClientIdentifier;
+            var profiles = message.Profiles;
 
             //Replace all the profiles from this client:
             var allProfiles = _allProfiles

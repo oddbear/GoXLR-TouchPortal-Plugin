@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows;
 using GoXLR.Desktop.ViewModels;
+using Microsoft.Extensions.Logging;
 
 namespace GoXLR.Desktop
 {
@@ -9,12 +10,14 @@ namespace GoXLR.Desktop
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly ILogger<MainWindow> _logger;
         private readonly MainViewModel _viewModel;
 
-        public MainWindow(MainViewModel viewModel)
+        public MainWindow(ILogger<MainWindow> logger, MainViewModel viewModel)
         {
             InitializeComponent();
 
+            _logger = logger;
             _viewModel = viewModel;
             this.DataContext = _viewModel;
         }
@@ -27,6 +30,7 @@ namespace GoXLR.Desktop
             }
             catch (Exception exception)
             {
+                _logger.LogError(exception.ToString());
                 MessageBox.Show(exception.Message);
             }
         }
@@ -39,6 +43,7 @@ namespace GoXLR.Desktop
             }
             catch (Exception exception)
             {
+                _logger.LogError(exception.ToString());
                 MessageBox.Show(exception.Message);
             }
         }
@@ -51,6 +56,7 @@ namespace GoXLR.Desktop
             }
             catch (Exception exception)
             {
+                _logger.LogError(exception.ToString());
                 MessageBox.Show(exception.Message);
             }
         }

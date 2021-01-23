@@ -39,6 +39,11 @@ namespace GoXLR.Simulator
             if (settings.DebugConsole)
                 AllocConsole();
 
+            //Logs to console, if AllocConsole is called:
+            var logger = serviceProvider.GetRequiredService<ILogger<App>>();
+            logger.LogInformation("Starting application.");
+
+            //Run application:
             var mainWindow = serviceProvider.GetRequiredService<MainWindow>();
             mainWindow.Show();
 

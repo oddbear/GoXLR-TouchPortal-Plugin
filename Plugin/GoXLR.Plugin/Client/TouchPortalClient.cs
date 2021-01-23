@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using GoXLR.Shared;
+using GoXLR.Shared.Models;
 using Microsoft.Extensions.Logging;
 using TouchPortalApi.Interfaces;
 using TouchPortalApi.Models;
@@ -17,6 +18,8 @@ namespace GoXLR.Plugin.Client
         private readonly Task<IMessageProcessor> _messageProcessorFactory;
         private readonly GoXLRServer _server;
 
+        private ClientIdentifier[] Clients = Array.Empty<ClientIdentifier>();
+
         private IMessageProcessor _messageProcessor;
         private Task _listener;
 
@@ -28,18 +31,8 @@ namespace GoXLR.Plugin.Client
             _messageProcessorFactory = messageProcessorFactory;
             _server = server;
 
-            _server.FetchedProfilesEvent = (message) =>
-            {
-                UpdateProfiles(message.InstanceId, message.Profiles);
-            };
-            _server.UpdateConnectedClientsEvent = identifiers =>
-            {
-                var clientIps = identifiers
-                    .Select(client => client.ClientIpAddress)
-                    .ToArray();
-
-                UpdateClientState(clientIps);
-            };
+            _server.FetchedProfilesEvent = UpdateProfiles;
+            _server.UpdateConnectedClientsEvent = UpdateClientState;
         }
 
         public async Task InitAsync()
@@ -64,21 +57,24 @@ namespace GoXLR.Plugin.Client
             });
         }
 
-        public void UpdateProfiles(string instanceId, string[] profiles)
+        public void UpdateProfiles(FetchedProfilesMessage message)
         {
             _messageProcessor.UpdateChoice(new ChoiceUpdate
             {
                 Id = ns + ".multiple.profiles.action.change.data.profiles",
-                InstanceId = instanceId,
-                Value = profiles
+                InstanceId = message.InstanceId,
+                Value = message.Profiles
             });
         }
 
-        public void UpdateClientState(string[] clients)
+        public void UpdateClientState(ClientIdentifier[] clientIdentifiers)
         {
-            if(clients is null)
-                return;
-
+            Clients = clientIdentifiers;            
+            
+            var clients = clientIdentifiers
+                .Select(client => client.ClientIpAddress)
+                .ToArray();
+            
             var clientChoices = new List<string> { "default" };
             clientChoices.AddRange(clients);
             
@@ -127,20 +123,14 @@ namespace GoXLR.Plugin.Client
             if (actionId == ns + ".multiple.profiles.action.change" &&
                 listId   == ns + ".multiple.profiles.action.change.data.clients")
             {
-                var clientIp = value;
-                if (clientIp == "default")
-                    clientIp = GetDefaultClient();
-
-                _server.FetchProfiles(clientIp, instanceId);
+                var client = GetClientIdentifier(value);
+                if (client is null)
+                    return;
+                
+                _server.FetchProfiles(client, instanceId);
             }
         }
-
-        private string GetDefaultClient()
-        {
-            //TODO: Find some logic for this one.
-            return "127.0.0.1";
-        }
-
+        
         /// <summary>
         /// On a button press on the Touch interface client.
         /// </summary>
@@ -183,18 +173,17 @@ namespace GoXLR.Plugin.Client
         {
             var dict = datalist
                 .ToDictionary(kv => kv.Id, kv => kv.Value);
-
-            if (!dict.TryGetValue(name + ".clients", out var clientIp) ||
-                clientIp == "default")
-            {
-                clientIp = GetDefaultClient();
-            }
+            
+            dict.TryGetValue(name + ".clients", out var clientIp);
+            var client = GetClientIdentifier(clientIp);
+            if(client is null)
+                return;
             
             var input = dict[name + ".inputs"];
             var output = dict[name + ".outputs"];
             var action = dict[name + ".actions"];
 
-            _server.SetRouting(clientIp, action, input, output);
+            _server.SetRouting(client, action, input, output);
         }
 
         private void ProfileChange(string name, List<ActionData> datalist)
@@ -202,15 +191,26 @@ namespace GoXLR.Plugin.Client
             var dict = datalist
                 .ToDictionary(kv => kv.Id, kv => kv.Value);
 
-            if (!dict.TryGetValue(name + ".clients", out var clientIp) ||
-                clientIp == "default")
-            {
-                clientIp = GetDefaultClient();
-            }
-            
+            dict.TryGetValue(name + ".clients", out var clientIp);
+            var client = GetClientIdentifier(clientIp);
+            if (client is null)
+                return;
+
             var profile = dict[name + ".profiles"];
 
-            _server.SetProfile(clientIp, profile);
+            _server.SetProfile(client, profile);
+        }
+
+        private ClientIdentifier GetClientIdentifier(string clientIp)
+        {
+            if (string.IsNullOrWhiteSpace(clientIp) || clientIp == "default")
+            {
+                //TODO: better logic:
+                return Clients.FirstOrDefault();
+            }
+            
+            return Clients
+                .FirstOrDefault(client => client.ClientIpAddress == clientIp);
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Windows;
-using GoXLR.Desktop.Events.FromGoXLR;
 using GoXLR.Desktop.ViewModels;
+using GoXLR.Shared;
 using GoXLR.Shared.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,11 +26,7 @@ namespace GoXLR.Desktop
             var serviceCollection = new ServiceCollection();
 
             //Add Logging:
-            LoggingStartup.AddLogging(serviceCollection);
-
-            var logger = serviceCollection
-                .BuildServiceProvider()
-                .GetRequiredService<ILogger<App>>();
+            serviceCollection.AddLogging(configure => configure.AddSimpleConsole(options => options.TimestampFormat = "[yyyy.MM.dd HH:mm:ss] "));
 
             //Add AppSettings:
             serviceCollection.Configure<AppSettings>(configurationRoot);
@@ -51,6 +47,16 @@ namespace GoXLR.Desktop
             if (settings.DebugConsole)
                 AllocConsole();
 
+            //Logs to console, if AllocConsole is called:
+            var logger = serviceProvider.GetRequiredService<ILogger<App>>();
+
+            //Init GoXLR Server:
+            logger.LogInformation("Initializing GoXLR Server");
+            var goXlrServer = serviceProvider.GetRequiredService<GoXLRServer>();
+            goXlrServer.Init();
+            logger.LogInformation("GoXLR Server initialized");
+            
+            //Run application:
             var mainWindow = serviceProvider.GetRequiredService<MainWindow>();
             mainWindow.Show();
 

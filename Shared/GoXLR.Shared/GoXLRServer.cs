@@ -122,13 +122,10 @@ namespace GoXLR.Shared
             //socket.OnPong = (bytes) => _logger.LogInformation("Pong: {0}", Convert.ToBase64String(bytes));
             socket.OnError = (exception) => _logger.LogError(exception.ToString());
         }
-
-        public void FetchProfiles(string clientIp, string contextId)
-            => FetchProfiles(GetClientIdentifier(clientIp), contextId);
-
+        
         public void FetchProfiles(ClientIdentifier clientIdentifier, string contextId)
         {
-            if (!_sockets.TryGetValue(clientIdentifier, out var connection))
+            if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))
             {
                 _logger.LogWarning($"No socket found on: {clientIdentifier}");
                 return;
@@ -143,13 +140,10 @@ namespace GoXLR.Shared
             //Send:
             _ = connection.Send(json);
         }
-
-        public void SetProfile(string clientIp, string profileName)
-            => SetProfile(GetClientIdentifier(clientIp), profileName);
-
+        
         public void SetProfile(ClientIdentifier clientIdentifier, string profileName)
         {
-            if (!_sockets.TryGetValue(clientIdentifier, out var connection))
+            if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))
             {
                 _logger.LogWarning($"No socket found on: {clientIdentifier}");
                 return;
@@ -164,13 +158,10 @@ namespace GoXLR.Shared
             //Send:
             _ = connection.Send(json);
         }
-
-        public void SetRouting(string clientIp, string action, string input, string output)
-            => SetRouting(GetClientIdentifier(clientIp), action, input, output);
-
+        
         public void SetRouting(ClientIdentifier clientIdentifier, string action, string input, string output)
         {
-            if (!_sockets.TryGetValue(clientIdentifier, out var connection))
+            if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))
             {
                 _logger.LogWarning($"No socket found on: {clientIdentifier}");
                 return;
@@ -186,21 +177,6 @@ namespace GoXLR.Shared
 
             //Send:
             _ = connection.Send(json);
-        }
-
-        private ClientIdentifier GetClientIdentifier(string clientIp)
-        {
-            if (string.IsNullOrWhiteSpace(clientIp))
-                return _sockets.Keys.FirstOrDefault();
-
-            var clientIdentifier = _sockets
-                .Select(kv => kv.Key)
-                .FirstOrDefault(key => key.ClientIpAddress == clientIp);
-
-            if (clientIdentifier is null)
-                _logger.LogWarning($"Could not find connection on IP: '{clientIp}'");
-
-            return clientIdentifier;
         }
     }
 }
