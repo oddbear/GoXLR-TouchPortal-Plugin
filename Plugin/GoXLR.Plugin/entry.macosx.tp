@@ -7,12 +7,12 @@
     "colorDark": "#59B1B6",
     "colorLight": "#59B1B6"
   },
-  "plugin_start_cmd": "\"%TP_PLUGIN_FOLDER%GoXLR.Plugin\\GoXLR.Plugin.exe\"",
+  "plugin_start_cmd": "/usr/local/share/dotnet/dotnet %TP_PLUGIN_FOLDER%GoXLR.Plugin/GoXLR.Plugin.dll",
   "categories": [
     {
       "id": "oddbear.touchportal.goxlr.single",
       "name": "GoXLR Single",
-      "imagepath": "%TP_PLUGIN_FOLDER%GoXLR.Plugin\\logo.png",
+      "imagepath": "%TP_PLUGIN_FOLDER%GoXLR.Plugin/logo.png",
       "actions": [
         {
           "id": "oddbear.touchportal.goxlr.single.routingtable.action.change",
@@ -94,7 +94,7 @@
     {
       "id": "oddbear.touchportal.goxlr.multiple",
       "name": "GoXLR Multiple",
-      "imagepath": "%TP_PLUGIN_FOLDER%GoXLR.Plugin\\logo.png",
+      "imagepath": "%TP_PLUGIN_FOLDER%GoXLR.Plugin/logo.png",
       "actions": [
         {
           "id": "oddbear.touchportal.goxlr.multiple.routingtable.action.change",
