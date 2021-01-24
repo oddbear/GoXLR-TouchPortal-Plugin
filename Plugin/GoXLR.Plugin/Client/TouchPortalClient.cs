@@ -44,7 +44,7 @@ namespace GoXLR.Plugin.Client
             _messageProcessor.OnConnectEventHandler += () =>
             {
                 _logger.LogInformation("Connect Event: Plugin Connected to TouchPortal.");
-                UpdateClientStateInitialized();
+                UpdateClientState(Array.Empty<ClientIdentifier>());
             };
             _messageProcessor.OnCloseEventHandler += () =>
             {
@@ -63,19 +63,18 @@ namespace GoXLR.Plugin.Client
             //Connecting to TouchPortal:
             _ = _messageProcessor.Listen();
             await _messageProcessor.TryPairAsync();
-
-            UpdateClientStateInitialized();
         }
         
         public void UpdateClientState(ClientIdentifier[] profilesIdentifiers)
         {
             _clients = profilesIdentifiers;
 
-            //TODO: Some issue after publish, but not in debug.
-        }
+            if (_messageProcessor is null)
+            {
+                _logger.LogWarning("MessageProcess not Initialized, but a client was connected.");
+                return;
+            }
 
-        private void UpdateClientStateInitialized()
-        {
             try
             {
                 //Since ports are quite random, we only use the ip when connecting to the plugin.
