@@ -41,7 +41,7 @@ namespace GoXLR.Plugin.Client
         {
             //Will wait until connected:
             _messageProcessor = await _messageProcessorFactory;
-            
+
             _messageProcessor.OnConnectEventHandler += () => _logger.LogInformation("Connect Event: Plugin Connected to TouchPortal.");
             _messageProcessor.OnCloseEventHandler += () => _logger.LogInformation("Close Event: Plugin Disconnected from TouchPortal.");
             _messageProcessor.OnListChangeEventHandler += OnListChangeEventHandler;
@@ -59,18 +59,26 @@ namespace GoXLR.Plugin.Client
                 _logger.LogError("Listener done?");
                 Console.WriteLine("------------- !!! ---------------");
             });
+
+            UpdateClientStateInitialized();
         }
         
         public void UpdateClientState(ClientIdentifier[] profilesIdentifiers)
         {
+            _clients = profilesIdentifiers;
+
+            if (_messageProcessor is not null)
+                UpdateClientStateInitialized();
+        }
+
+        private void UpdateClientStateInitialized()
+        {
             try
             {
-                _clients = profilesIdentifiers;
-
                 //Since ports are quite random, we only use the ip when connecting to the plugin.
                 //There is only possible (without faking it) to have one client per ip.
                 //Therefor this is a unique identifier that will hold between restarts.
-                var clients = profilesIdentifiers
+                var clients = _clients
                     .Select(identifier => identifier.ClientIpAddress)
                     .ToArray();
 
