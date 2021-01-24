@@ -43,7 +43,6 @@
                 <Button Grid.Column="0" Content="Get Profiles" HorizontalAlignment="Left" VerticalAlignment="Top" Padding="5,2" Click="ButtonGetProfiles_Click" />
                 <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="5, 0"
                           ItemsSource="{Binding Path=Profiles}"
-                          DisplayMemberPath="ProfileName"
                           SelectedItem="{Binding Path=SelectedProfile}"/>
                 <Button Grid.Column="2" Content="Set Selected Profile" HorizontalAlignment="Left" VerticalAlignment="Top" Padding="5,2" Click="ButtonSetProfile_Click"/>
             </Grid>

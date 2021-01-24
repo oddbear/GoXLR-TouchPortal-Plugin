@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using Fleck;
-using GoXLR.Shared.Models;
+using GoXLR.Server.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace GoXLR.Shared
+namespace GoXLR.Server
 {
     // ReSharper disable InconsistentNaming
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "This is they we write it.")]
@@ -18,9 +18,9 @@ namespace GoXLR.Shared
         
         private readonly WebSocketServerSettings _settings;
         private readonly Dictionary<ClientIdentifier, IWebSocketConnection> _sockets = new();
+        private readonly Dictionary<ClientIdentifier, ClientData> _clientData = new();
 
         public Action<ClientIdentifier[]> UpdateConnectedClientsEvent { get; set; }
-        public Action<FetchedProfilesMessage> FetchedProfilesEvent { get; set; }
 
         public GoXLRServer(ILogger<GoXLRServer> logger,
             IOptions<WebSocketServerSettings> options)
@@ -38,24 +38,26 @@ namespace GoXLR.Shared
 
         private void OnClientConnecting(IWebSocketConnection socket)
         {
-            var identifier = new ClientIdentifier(socket.ConnectionInfo.ClientIpAddress, socket.ConnectionInfo.ClientPort);
+            var connectionInfo = socket.ConnectionInfo;
+            var identifier = new ClientIdentifier(connectionInfo.ClientIpAddress, connectionInfo.ClientPort);
 
             socket.OnOpen = () =>
             {
                 _sockets.Add(identifier, socket);
                 _logger.LogInformation($"Connection opened {socket.ConnectionInfo.ClientIpAddress}.");
+                
+                UpdateConnectedClientsEvent?.Invoke(_sockets.Keys.ToArray());
 
-                var clients = _sockets.Keys.ToArray();
-                UpdateConnectedClientsEvent?.Invoke(clients);
+                //Get updated profiles:
+                FetchProfiles(identifier);
             };
 
             socket.OnClose = () =>
             {
                 _sockets.Remove(identifier);
                 _logger.LogInformation($"Connection closed {socket.ConnectionInfo.ClientIpAddress}.");
-                
-                var clients = _sockets.Keys.ToArray();
-                UpdateConnectedClientsEvent?.Invoke(clients);
+
+                UpdateConnectedClientsEvent?.Invoke(_sockets.Keys.ToArray());
             };
 
             socket.OnBinary = (bytes) =>
@@ -92,7 +94,6 @@ namespace GoXLR.Shared
                     var root = document.RootElement;
                     var propertyAction = root.GetProperty("action").GetString();
                     var propertyEvent = root.GetProperty("event").GetString();
-                    var propertyContext = root.GetProperty("context").GetString();
                     
                     if (propertyAction == "com.tchelicon.goXLR.ChangeProfile" &&
                         propertyEvent == "sendToPropertyInspector")
@@ -105,7 +106,9 @@ namespace GoXLR.Shared
                             .Select(element => element.GetString())
                             .ToArray();
 
-                        FetchedProfilesEvent?.Invoke(new FetchedProfilesMessage(identifier, propertyContext, profiles));
+                        //Set client data:
+                        var clientData = new ClientData(identifier, profiles);
+                        _clientData[identifier] = clientData;
                     }
                     else
                     {
@@ -122,8 +125,8 @@ namespace GoXLR.Shared
             //socket.OnPong = (bytes) => _logger.LogInformation("Pong: {0}", Convert.ToBase64String(bytes));
             socket.OnError = (exception) => _logger.LogError(exception.ToString());
         }
-        
-        public void FetchProfiles(ClientIdentifier clientIdentifier, string contextId)
+
+        private void FetchProfiles(ClientIdentifier clientIdentifier)
         {
             if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))
             {
@@ -132,13 +135,25 @@ namespace GoXLR.Shared
             }
             
             //Sanitize:
-            contextId = JsonSerializer.Serialize(contextId);
+            var contextId = JsonSerializer.Serialize($"{clientIdentifier.ClientIpAddress}:{clientIdentifier.ClientPort}");
 
             //Build:
             var json = $"{{\"action\":\"com.tchelicon.goxlr.profilechange\",\"context\":{contextId},\"event\":\"propertyInspectorDidAppear\"}}";
 
             //Send:
             _ = connection.Send(json);
+        }
+
+        public ClientData GetClientData(ClientIdentifier clientIdentifier)
+        {
+            if (clientIdentifier is null || !_clientData.TryGetValue(clientIdentifier, out var clientData))
+            {
+                _logger.LogWarning($"ClientData missing for: '{clientIdentifier}'");
+                return null;
+            }
+
+            return clientData;
+
         }
         
         public void SetProfile(ClientIdentifier clientIdentifier, string profileName)

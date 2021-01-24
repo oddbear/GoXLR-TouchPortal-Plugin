@@ -2,8 +2,8 @@
 using System.IO;
 using System.Windows;
 using GoXLR.Desktop.ViewModels;
-using GoXLR.Shared;
-using GoXLR.Shared.Configuration;
+using GoXLR.Server;
+using GoXLR.Server.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -34,10 +34,10 @@ namespace GoXLR.Desktop
             //Add Main Program:
             serviceCollection.AddSingleton(typeof(MainWindow));
             serviceCollection.AddSingleton(typeof(MainViewModel));
-            
+
             //Add WebSocket Server:
-            WebSocketServerStartup.ConfigureWebSocketServer(serviceCollection, configurationRoot);
-            WebSocketServerStartup.AddWebSocketServer(serviceCollection);
+            serviceCollection.Configure<WebSocketServerSettings>(configurationRoot.GetSection("WebSocketServerSettings"));
+            serviceCollection.AddScoped<GoXLRServer>();
 
             var serviceProvider = serviceCollection.BuildServiceProvider();
             

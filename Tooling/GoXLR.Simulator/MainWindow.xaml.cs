@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Input;
 using GoXLR.Simulator.ViewModels;
+using Microsoft.Extensions.Logging;
 
 namespace GoXLR.Simulator
 {
@@ -10,11 +11,13 @@ namespace GoXLR.Simulator
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly ILogger<MainWindow> _logger;
         private readonly MainViewModel _viewModel;
 
-        public MainWindow(MainViewModel viewModel)
+        public MainWindow(ILogger<MainWindow> logger, MainViewModel viewModel)
         {
             InitializeComponent();
+            _logger = logger;
             _viewModel = viewModel;
             this.DataContext = _viewModel;
         }
@@ -31,8 +34,11 @@ namespace GoXLR.Simulator
             }
             catch (Exception exception)
             {
+                _logger.LogError(exception.ToString());
                 MessageBox.Show(exception.Message);
             }
+
+            e.Handled = true;
         }
 
         private void ButtonDisconnect_Click(object sender, RoutedEventArgs e)
@@ -43,17 +49,29 @@ namespace GoXLR.Simulator
             }
             catch (Exception exception)
             {
+                _logger.LogError(exception.ToString());
                 MessageBox.Show(exception.Message);
             }
+
+            e.Handled = true;
         }
 
         private void IpAddress_OnKeyUp(object sender, KeyEventArgs e)
         {
-            if (e.Key != Key.Enter) return;
+            try
+            {
+                if (e.Key == Key.Enter)
+                {
+                    ButtonConnect_Click(sender, e);
+                }
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception.ToString());
+                MessageBox.Show(exception.Message);
+            }
 
-            // your event handler here
             e.Handled = true;
-            ButtonConnect_Click(sender, e);
         }
     }
 }

@@ -7,11 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Shared\GoXLR.Shared\GoXLR.Shared.csproj" />
+    <PackageReference Include="TouchPortalApi" Version="0.3.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\TouchPortalAPI\TouchPortalApi\TouchPortalApi.csproj" />
+    <ProjectReference Include="..\..\Server\GoXLR.Server\GoXLR.Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>

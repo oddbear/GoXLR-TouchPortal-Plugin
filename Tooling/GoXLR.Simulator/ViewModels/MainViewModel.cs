@@ -80,7 +80,7 @@ namespace GoXLR.Simulator.ViewModels
             await _client.StartAsync();
         }
 
-        private async void ClientOnMessageReceived(string json)
+        private async Task ClientOnMessageReceived(string json)
         {
             try
             {
@@ -91,59 +91,58 @@ namespace GoXLR.Simulator.ViewModels
                 if (document is null)
                     return;
 
-                var root = document.RootElement;
-                var propertyAction = root.GetProperty("action").GetString();
-                var propertyEvent = root.GetProperty("event").GetString();
-
-                var propertyContext = root.TryGetProperty("context", out var jsonPropertyContext)
-                    ? jsonPropertyContext.GetString()
-                    : null;
+                var rootElement = document.RootElement;
+                var propertyAction = rootElement.GetProperty("action").GetString();
+                var propertyEvent = rootElement.GetProperty("event").GetString();
 
                 switch (propertyAction)
                 {
                     case "com.tchelicon.goxlr.profilechange" when propertyEvent == "propertyInspectorDidAppear":
-                        await SendProfilesResponse(propertyContext);
+                        await SendProfilesResponse(rootElement);
                         break;
                     case "com.tchelicon.goxlr.profilechange" when propertyEvent == "keyUp":
-                        LogProfileChange(json);
+                        LogProfileChange(rootElement);
                         break;
                     case "com.tchelicon.goxlr.routingtable"  when propertyEvent == "keyUp":
-                        LogRouteChange(json);
+                        LogRouteChange(rootElement);
                         break;
                 }
             }
             catch (Exception e)
             {
                 var entry = $"Error '{e.Message}'";
-                _logger.LogInformation(entry);
+                _logger.LogError(e.ToString());
                 Log += $"{DateTime.Now:s} {entry}{Environment.NewLine}";
             }
         }
 
-        private async Task SendProfilesResponse(string contextId)
+        private async Task SendProfilesResponse(JsonElement document)
         {
+            var propertyContext = document.TryGetProperty("context", out var jsonPropertyContext)
+                ? jsonPropertyContext.GetString()
+                : null;
+
             //Sanitize:
-            contextId = JsonSerializer.Serialize(contextId);
+            propertyContext = JsonSerializer.Serialize(propertyContext);
 
             var profiles = Profiles
-                .Split(Environment.NewLine)
-                .Select(profile => profile);
+                .Split(Environment.NewLine);
 
             var profilesStr = JsonSerializer.Serialize(profiles);
 
             //Build:
-            var json = $"{{\"action\":\"com.tchelicon.goXLR.ChangeProfile\",\"context\":{contextId},\"event\":\"sendToPropertyInspector\",\"payload\":{{\"Profiles\":{profilesStr}}}}}";
+            var json = $"{{\"action\":\"com.tchelicon.goXLR.ChangeProfile\",\"context\":{propertyContext},\"event\":\"sendToPropertyInspector\",\"payload\":{{\"Profiles\":{profilesStr}}}}}";
             
             //Send:
             await _client.SendAsync(json, CancellationToken.None)
                 .ConfigureAwait(false);
         }
 
-        private void LogProfileChange(string json)
+        private void LogProfileChange(JsonElement document)
         {
-            var requestedProfile = JsonSerializer.Deserialize<JsonDocument>(json)
-                .RootElement
+            var requestedProfile = document
                 .GetProperty("payload")
+                .GetProperty("settings")
                 .GetProperty("SelectedProfile")
                 .GetString();
 
@@ -153,10 +152,9 @@ namespace GoXLR.Simulator.ViewModels
             Log += $"{DateTime.Now:s} {entry}{Environment.NewLine}";
         }
 
-        private void LogRouteChange(string json)
+        private void LogRouteChange(JsonElement document)
         {
-            var settings = JsonSerializer.Deserialize<JsonDocument>(json)
-                .RootElement
+            var settings = document
                 .GetProperty("payload")
                 .GetProperty("settings");
 

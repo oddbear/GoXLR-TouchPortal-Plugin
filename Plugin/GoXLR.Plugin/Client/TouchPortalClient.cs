@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using GoXLR.Shared;
-using GoXLR.Shared.Models;
+using GoXLR.Server;
+using GoXLR.Server.Models;
 using Microsoft.Extensions.Logging;
 using TouchPortalApi.Interfaces;
 using TouchPortalApi.Models;
@@ -17,7 +17,7 @@ namespace GoXLR.Plugin.Client
         private readonly ILogger<TouchPortalClient> _logger;
         private readonly Task<IMessageProcessor> _messageProcessorFactory;
         private readonly GoXLRServer _server;
-
+        
         private ClientIdentifier[] Clients = Array.Empty<ClientIdentifier>();
 
         private IMessageProcessor _messageProcessor;
@@ -31,7 +31,6 @@ namespace GoXLR.Plugin.Client
             _messageProcessorFactory = messageProcessorFactory;
             _server = server;
 
-            _server.FetchedProfilesEvent = UpdateProfiles;
             _server.UpdateConnectedClientsEvent = UpdateClientState;
         }
 
@@ -56,23 +55,16 @@ namespace GoXLR.Plugin.Client
                 Console.WriteLine("------------- !!! ---------------");
             });
         }
-
-        public void UpdateProfiles(FetchedProfilesMessage message)
+        
+        public void UpdateClientState(ClientIdentifier[] profilesIdentifiers)
         {
-            _messageProcessor.UpdateChoice(new ChoiceUpdate
-            {
-                Id = ns + ".multiple.profiles.action.change.data.profiles",
-                InstanceId = message.InstanceId,
-                Value = message.Profiles
-            });
-        }
-
-        public void UpdateClientState(ClientIdentifier[] clientIdentifiers)
-        {
-            Clients = clientIdentifiers;            
+            Clients = profilesIdentifiers;
             
-            var clients = clientIdentifiers
-                .Select(client => client.ClientIpAddress)
+            //Since ports are quite random, we only use the ip when connecting to the plugin.
+            //There is only possible (without faking it) to have one client per ip.
+            //Therefor this is a unique identifier that will hold between restarts.
+            var clients = profilesIdentifiers
+                .Select(identifier => identifier.ClientIpAddress)
                 .ToArray();
             
             var clientChoices = new List<string> { "default" };
@@ -126,8 +118,17 @@ namespace GoXLR.Plugin.Client
                 var client = GetClientIdentifier(value);
                 if (client is null)
                     return;
-                
-                _server.FetchProfiles(client, instanceId);
+
+                var clientData = _server.GetClientData(client);
+                if (clientData is null)
+                    return;
+
+                _messageProcessor.UpdateChoice(new ChoiceUpdate
+                {
+                    Id = ns + ".multiple.profiles.action.change.data.profiles",
+                    InstanceId = instanceId,
+                    Value = clientData.Profiles
+                });
             }
         }
         
@@ -210,7 +211,7 @@ namespace GoXLR.Plugin.Client
             }
             
             return Clients
-                .FirstOrDefault(client => client.ClientIpAddress == clientIp);
+                .FirstOrDefault(identifier => identifier.ClientIpAddress == clientIp);
         }
     }
 }

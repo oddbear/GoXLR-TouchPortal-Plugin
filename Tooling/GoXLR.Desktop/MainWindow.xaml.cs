@@ -65,10 +65,11 @@ namespace GoXLR.Desktop
         {
             try
             {
-                _viewModel.UpdateProfiles();
+                _viewModel.GetProfiles();
             }
             catch (Exception exception)
             {
+                _logger.LogError(exception.ToString());
                 MessageBox.Show(exception.Message);
             }
         }

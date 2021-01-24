@@ -1,4 +1,4 @@
-﻿namespace GoXLR.Shared.Models
+﻿namespace GoXLR.Server.Models
 {
     public class WebSocketServerSettings
     {

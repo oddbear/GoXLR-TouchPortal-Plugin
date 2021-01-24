@@ -1,4 +1,4 @@
-﻿using GoXLR.Shared.Models;
+﻿using GoXLR.Server.Models;
 
 namespace GoXLR.Plugin
 {

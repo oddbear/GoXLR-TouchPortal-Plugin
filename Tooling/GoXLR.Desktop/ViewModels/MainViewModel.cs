@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Threading;
-using GoXLR.Desktop.ViewModels.Models;
-using GoXLR.Shared;
-using GoXLR.Shared.Models;
+using GoXLR.Server;
+using GoXLR.Server.Models;
 using Microsoft.Extensions.Logging;
 
 namespace GoXLR.Desktop.ViewModels
@@ -21,10 +19,9 @@ namespace GoXLR.Desktop.ViewModels
 
         public List<ClientIdentifier> Clients { get; set; }
         public ClientIdentifier SelectedClient { get; set; }
-
-        private IEnumerable<ProfileModel> _allProfiles { get; set; }
-        public IEnumerable<ProfileModel> Profiles { get; set; }
-        public ProfileModel SelectedProfile { get; set; }
+        
+        public IEnumerable<string> Profiles { get; set; }
+        public string SelectedProfile { get; set; }
 
         public string[] Inputs { get; set; }
         public string SelectedInput { get; set; }
@@ -41,9 +38,7 @@ namespace GoXLR.Desktop.ViewModels
             GoXLRServer server)
         {
             _logger = logger;
-
-            _allProfiles = Enumerable.Empty<ProfileModel>();
-
+            
             Clients = new List<ClientIdentifier>();
 
             Inputs = new [] { "Mic", "Chat", "Music", "Game", "Console", "Line In", "System", "Samples" };
@@ -57,26 +52,30 @@ namespace GoXLR.Desktop.ViewModels
             
             _server = server;
 
-            _server.FetchedProfilesEvent = UpdateProfiles;
             _server.UpdateConnectedClientsEvent = UpdateClientState;
         }
 
         public void GetProfiles()
         {
             var client = SelectedClient;
+            
+            var clientData = _server.GetClientData(client);
 
-            var instanceId = $"{client.ClientIpAddress}:{client.ClientPort}";
+            Profiles = clientData?.Profiles ?? Array.Empty<string>();
+            SelectedProfile = Profiles.FirstOrDefault();
 
-            _server.FetchProfiles(client, instanceId);
+            LogInformation($"Profiles updated: {string.Join(", ", Profiles)}");
         }
 
         public void SetProfile()
         {
             var client = SelectedClient;
 
-            var profile = SelectedProfile?.ProfileName;
+            var profile = SelectedProfile;
 
             _server.SetProfile(client, profile);
+
+            LogInformation($"Set Profile: {profile}");
         }
 
         public void SetRouting()
@@ -88,50 +87,29 @@ namespace GoXLR.Desktop.ViewModels
             var output = SelectedOutput;
 
             _server.SetRouting(client, action, input, output);
-        }
-
-        public void UpdateProfiles()
-        {
-            Profiles = _allProfiles
-                .Where(profile => profile.ClientIdentifier == SelectedClient)
-                .ToList();
-
-            SelectedProfile = Profiles.FirstOrDefault();
+            
+            LogInformation($"Set Routing: {input}, {output}, {action}");
         }
         
-        public void UpdateProfiles(FetchedProfilesMessage message)
-        {
-            var identifier = message.ClientIdentifier;
-            var profiles = message.Profiles;
-
-            //Replace all the profiles from this client:
-            var allProfiles = _allProfiles
-                .Where(profile => profile.ClientIdentifier != identifier)
-                .Union(profiles
-                    .Select(profile => new ProfileModel { ClientIdentifier = identifier, ProfileName = profile }))
-                .ToArray();
-
-            _allProfiles = allProfiles;
-
-            UpdateProfiles();
-        }
-
         public void UpdateClientState(ClientIdentifier[] clients)
         {
-            var entry = $"Clients updated.";
-            _logger.LogInformation(entry);
-            Log += $"{DateTime.Now:s} {entry}{Environment.NewLine}";
-
             Clients = clients.ToList();
-
-            //TODO: What if selected client is the disconnected one?
+            
             SelectedClient ??= clients.FirstOrDefault();
-            OnPropertyChanged(nameof(Clients));
+            //OnPropertyChanged(nameof(Clients));
+
+            var entry = $"Clients updated: {string.Join(", ", clients.Select(client => $"{client.ClientIpAddress}:{client.ClientPort}"))}";
+            LogInformation(entry);
         }
-        
+
+        //If ObservableCollection or similar: Application.Current.Dispatcher.Invoke(() => Clients.Add(...));
         private void OnPropertyChanged(string propertyName)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
 
-    //If ObservableCollection or similar: Application.Current.Dispatcher.Invoke(() => Clients.Add(...));
+        private void LogInformation(string entry)
+        {
+            _logger.LogInformation(entry);
+            Log += $"{DateTime.Now:s} {entry}{Environment.NewLine}";
+        }
+    }
 }

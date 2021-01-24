@@ -13,7 +13,7 @@ namespace GoXLR.Simulator.Client
         private ClientWebSocket _client;
         private Task _handleWorker;
 
-        public Action<string> OnMessage { get; set; }
+        public Func<string, Task> OnMessage { get; set; }
         public Action<string> OnOpen { get; set; }
         public Action<string> OnClose { get; set; }
         public Action<Exception> OnError { get; set; }
@@ -25,7 +25,8 @@ namespace GoXLR.Simulator.Client
 
         public async Task StartAsync(CancellationToken cancellationToken = default)
         {
-            //TODO: Cleanup this code. But it's not THAT important, as this is just tooling.
+            //TODO: Cleanup this code.
+            // ... But it's not THAT important, as this is just tooling.
             _client = new ClientWebSocket();
             await _client.ConnectAsync(_uri, cancellationToken);
 
@@ -76,7 +77,11 @@ namespace GoXLR.Simulator.Client
                         if (receiveResult.EndOfMessage)
                         {
                             var message = messageBuilder.ToString();
-                            OnMessage?.Invoke(message);
+                            var invokeAsync = OnMessage?.Invoke(message);
+                            if (invokeAsync is not null)
+                            {
+                                await invokeAsync;
+                            }
 
                             //Reset message builder.
                             messageBuilder = new StringBuilder();
