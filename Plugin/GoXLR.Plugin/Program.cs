@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using GoXLR.Plugin.Client;
 using GoXLR.Server;
@@ -27,7 +28,7 @@ namespace GoXLR.Plugin
             var logger = serviceCollection
                 .BuildServiceProvider()
                 .GetRequiredService<ILogger<Program>>();
-
+            
             //Add AppSettings:
             serviceCollection.Configure<AppSettings>(configurationRoot);
 
@@ -51,14 +52,15 @@ namespace GoXLR.Plugin
 
             //Init TouchPortal:
             logger.LogInformation("Initializing TouchPortal client");
+            var manualResetEvent = new ManualResetEvent(false);
             var touchPortalClient = serviceProvider.GetRequiredService<TouchPortalClient>();
             await touchPortalClient.InitAsync();
             logger.LogInformation("TouchPortal client initialized");
-            
-            Console.WriteLine("Plugin is now running.");
 
-            Console.WriteLine("Press any key to exit.");
-            Console.ReadLine();
+            logger.LogInformation("Plugin is now running.");
+            
+            //When running under TouchPortal, Console.ReadLine would not work.
+            manualResetEvent.WaitOne();
         }
     }
 }

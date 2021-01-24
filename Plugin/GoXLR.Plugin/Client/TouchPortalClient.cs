@@ -24,7 +24,6 @@ namespace GoXLR.Plugin.Client
         private IReadOnlyCollection<string> _localAddresses = Array.Empty<string>();
 
         private IMessageProcessor _messageProcessor;
-        private Task _listener;
 
         public TouchPortalClient(ILogger<TouchPortalClient> logger,
             Task<IMessageProcessor> messageProcessorFactory,
@@ -42,23 +41,28 @@ namespace GoXLR.Plugin.Client
             //Will wait until connected:
             _messageProcessor = await _messageProcessorFactory;
 
-            _messageProcessor.OnConnectEventHandler += () => _logger.LogInformation("Connect Event: Plugin Connected to TouchPortal.");
-            _messageProcessor.OnCloseEventHandler += () => _logger.LogInformation("Close Event: Plugin Disconnected from TouchPortal.");
+            _messageProcessor.OnConnectEventHandler += () =>
+            {
+                _logger.LogInformation("Connect Event: Plugin Connected to TouchPortal.");
+                UpdateClientStateInitialized();
+            };
+            _messageProcessor.OnCloseEventHandler += () =>
+            {
+                _logger.LogInformation("Close Event: Plugin Disconnected from TouchPortal.");
+
+                //This seems hackish, but is how the Java SDK does it.
+                // or we can use method Set() on the ManualResetEvent at this point.
+                // or we can check if the parent process exists.
+                Environment.Exit(0);
+            };
             _messageProcessor.OnListChangeEventHandler += OnListChangeEventHandler;
             _messageProcessor.OnActionEvent += OnActionEvent;
-
-            //Connecting to TouchPortal:
-            await _messageProcessor.TryPairAsync();
-
+            
             _localAddresses = GetLocalAddresses();
 
-            //TODO: Why does this hold forever?
-            _listener = Task.Run(async () =>
-            {
-                await _messageProcessor.Listen();
-                _logger.LogError("Listener done?");
-                Console.WriteLine("------------- !!! ---------------");
-            });
+            //Connecting to TouchPortal:
+            _ = _messageProcessor.Listen();
+            await _messageProcessor.TryPairAsync();
 
             UpdateClientStateInitialized();
         }
@@ -67,8 +71,7 @@ namespace GoXLR.Plugin.Client
         {
             _clients = profilesIdentifiers;
 
-            if (_messageProcessor is not null)
-                UpdateClientStateInitialized();
+            //TODO: Some issue after publish, but not in debug.
         }
 
         private void UpdateClientStateInitialized()
