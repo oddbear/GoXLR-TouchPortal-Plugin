@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using GoXLR.Desktop.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -71,6 +73,14 @@ namespace GoXLR.Desktop
             {
                 _logger.LogError(exception.ToString());
                 MessageBox.Show(exception.Message);
+            }
+        }
+
+        private void TextBoxBase_OnTextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is TextBoxBase textBoxBase)
+            {
+                textBoxBase.ScrollToEnd();
             }
         }
     }

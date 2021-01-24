@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using GoXLR.Simulator.ViewModels;
 using Microsoft.Extensions.Logging;
@@ -72,6 +74,14 @@ namespace GoXLR.Simulator
             }
 
             e.Handled = true;
+        }
+
+        private void TextBoxBase_OnTextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is TextBoxBase textBoxBase)
+            {
+                textBoxBase.ScrollToEnd();
+            }
         }
     }
 }

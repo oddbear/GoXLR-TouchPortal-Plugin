@@ -25,7 +25,7 @@
             <TextBox Height="Auto" AcceptsReturn="True" Text="{Binding Path=Profiles}" />
         </GroupBox>
         <GroupBox Header="Log" Height="Auto" Grid.Row="2">
-            <TextBox Height="Auto" AcceptsReturn="True" Text="{Binding Path=Log, Mode=OneWay}" IsReadOnly="True" VerticalScrollBarVisibility="Visible" />
+            <TextBox Height="Auto" AcceptsReturn="True" Text="{Binding Path=Log, Mode=OneWay}" IsReadOnly="True" VerticalScrollBarVisibility="Visible" TextChanged="TextBoxBase_OnTextChanged" />
         </GroupBox>
     </Grid>
 </Window>

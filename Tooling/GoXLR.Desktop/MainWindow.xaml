@@ -77,7 +77,7 @@
         </Grid>
         </GroupBox>
         <GroupBox Header="Log" Grid.Row="3">
-            <TextBox Height="Auto" AcceptsReturn="True" Text="{Binding Path=Log, Mode=OneWay}" IsReadOnly="True" VerticalScrollBarVisibility="Visible" />
+            <TextBox Height="Auto" AcceptsReturn="True" Text="{Binding Path=Log, Mode=OneWay}" IsReadOnly="True" VerticalScrollBarVisibility="Visible" TextChanged="TextBoxBase_OnTextChanged" />
         </GroupBox>
     </Grid>
 </Window>
