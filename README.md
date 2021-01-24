@@ -8,15 +8,20 @@ The plugin therefor supports:
 - Set a specific profile
 - Changes to the routing table
 
+Additional features:
+- Mac OS X Support
+- Possible to control multiple PCs
+- Status indicators: client count, and client name (when single pc)
+
 ### Setup:
 
 Download latest .NET Runtime from (5.0.0 or higher) https://dotnet.microsoft.com/download
 
 Download the latest tpp file from (under assets): https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases
 
-Install tpp file from TouchPortal or unzip .tpp file to (Windows): `%appdata%\TouchPortal\plugins\GoXLR`
+Install tpp file from TouchPortal or unzip .tpp file to (Windows): `%appdata%\TouchPortal\plugins\GoXLR.Plugin`
 
-This folder should then contain the `GoXLR.Worker.exe and` `entry.tp`
+This folder should then contain the `GoXLR.Plugin.exe and` `entry.tp`
 
 ### Configuration
 
@@ -37,11 +42,10 @@ Tooling needs .NET Desktop Runtime 5.0.0 from https://dotnet.microsoft.com/downl
 
 - Unicode characters in profile names is not shown correctly.
 - Cannot run at the same time as other plugins using same port.
-- Remote connection to another computer does not work on Windows (works on Mac OS X).
 - Routing on and off Status not shown (planned update to the GoXLR App).
 
 ### Dependencies
 
 - [.Net TouchPortalApi](https://github.com/tlewis17/TouchPortalAPI)
-- [Watson Websocket](https://github.com/jchristn/WatsonWebsocket)
+- [Fleck](https://github.com/statianzo/Fleck)
 - [Fody.PropertyChanged](https://github.com/Fody/PropertyChanged)
