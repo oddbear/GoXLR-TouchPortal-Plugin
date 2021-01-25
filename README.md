@@ -17,7 +17,10 @@ Additional features:
 
 Download latest .NET Runtime from (5.0.0 or higher) https://dotnet.microsoft.com/download
 
-Download the latest tpp file from (under assets): https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases
+Download the latest tpp file from [releases](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases) (under assets):
+
+- Plugin for [Windows](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.5-beta/TouchPortal.GoXLR.Plugin.Windows.tpp)
+- Plugin for [Mac OS X](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.5-beta/TouchPortal.GoXLR.Plugin.MacOSX.tpp)
 
 Install tpp file from TouchPortal or unzip .tpp file to (Windows): `%appdata%\TouchPortal\plugins\GoXLR.Plugin`
 
@@ -25,23 +28,30 @@ This folder should then contain the `GoXLR.Plugin.exe and` `entry.tp`
 
 ### Configuration
 
-Start TouchPortal and accept/trust the plugin
-Start GoXLR and see that it would connect to the same PC
+1. Start TouchPortal and accept/trust the plugin, and the firewall prompt.
+2. Start GoXLR App, and check that the Connect/Reconnect is configured (under 'SYSTEM' > 'Global Settings').
+   1. TouchPortal on same computer, uncheck 'Streamdeck on non-GOXLR PC'.
+   2. TouchPortal on another computer, check, and provide the IP.
+3. If you changed anything, restart the GoXLR App (this is important, as it only connects to the plugin on startup).
 
 ### Other
 
-TouchPortal with the plugin must be started before GoXLR
-If any StreamDeck changes is done in the GoXLR Global Settings, the GoXLR App could need to be restarted.
+TouchPortal with the plugin **must** be started **before** the GoXLR App
+If **any** StreamDeck changes is done in the GoXLR App 'Global Settings', the GoXLR App would **must** be restarted *(this is a limitation by the GoXLR App)*.
+If there is any problems, try restarting the GoXLR App.
 
 ### Tooling (Windows only)
 
-Tooling for development, GUI Server/Client for simulating a device.
+Tooling used for development/trubleshooting. GUI Server and Client for simulating a device or the plugin.
 Tooling needs .NET Desktop Runtime 5.0.0 from https://dotnet.microsoft.com/download/dotnet/5.0
+
+- [GoXLR Simulator](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.5-beta/Windows.GUI.Tooling.GoXLR.Simulator.zip)
+- [Plugin Simulator](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.5-beta/Windows.GUI.Tooling.Plugin.Simulator.zip)
 
 ### Known issues
 
-- Unicode characters in profile names is not shown correctly.
-- Cannot run at the same time as other plugins using same port.
+- Unicode characters in profile names is not shown correctly (should be fixed with TouchPortal 2.3 update).
+- Cannot run at the same time as other plugins using same port (external limitation).
 - Routing on and off Status not shown (planned update to the GoXLR App).
 
 ### Dependencies
