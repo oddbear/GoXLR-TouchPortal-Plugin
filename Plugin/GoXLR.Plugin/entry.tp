@@ -85,7 +85,7 @@
         {
           "id": "oddbear.touchportal.goxlr.single.clients.state.connected",
           "type": "text",
-          "desc": "Name of the GoXLR client connected.",
+          "desc": "GoXLR: Connected client name / ip",
           "default": "none"
         }
       ],
@@ -184,7 +184,7 @@
         {
           "id": "oddbear.touchportal.goxlr.multiple.clients.states.count",
           "type": "text",
-          "desc": "Number of GoXLR clients connected.",
+          "desc": "GoXLR: Connected clients count",
           "default": "0"
         }
       ],
