@@ -40,12 +40,12 @@ namespace GoXLR.Plugin.Client
             _messageProcessor = new MessageProcessor(logger, _settings);
         }
 
-        public async Task InitAsync()
+        public void Init()
         {
             _messageProcessor.OnInfo = (infoMessage) =>
             {
                 _logger.LogInformation("Connect Event: Plugin Connected to TouchPortal.");
-                UpdateClientState(Array.Empty<ClientIdentifier>());
+                UpdateClientState(_clients);
             };
             _messageProcessor.OnDisconnect = (exception) =>
             {

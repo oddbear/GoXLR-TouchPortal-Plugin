@@ -13,7 +13,7 @@ namespace GoXLR.Plugin
 {
     public class Program
     {
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
             var configurationRoot = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetParent(AppContext.BaseDirectory).FullName)
@@ -53,7 +53,7 @@ namespace GoXLR.Plugin
             //Init TouchPortal:
             logger.LogInformation("Initializing TouchPortal client");
             var touchPortalClient = serviceProvider.GetRequiredService<TouchPortalClient>();
-            await touchPortalClient.InitAsync();
+            touchPortalClient.Init();
             logger.LogInformation("TouchPortal client initialized");
 
             logger.LogInformation("Plugin is now running.");
