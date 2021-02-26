@@ -17,8 +17,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugin", "Plugin", "{E63915
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Server", "Server", "{5DC93ED2-C60A-4178-8B6E-45E45DE11C5B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TouchPortalApi", "..\TouchPortalAPI\TouchPortalApi\TouchPortalApi.csproj", "{86119002-98EC-42CB-875E-DC9E9C9C7C67}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,10 +39,6 @@ Global
 		{0339F59C-BFCC-43AD-88A3-D71C5ED2EB71}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0339F59C-BFCC-43AD-88A3-D71C5ED2EB71}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0339F59C-BFCC-43AD-88A3-D71C5ED2EB71}.Release|Any CPU.Build.0 = Release|Any CPU
-		{86119002-98EC-42CB-875E-DC9E9C9C7C67}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{86119002-98EC-42CB-875E-DC9E9C9C7C67}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{86119002-98EC-42CB-875E-DC9E9C9C7C67}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{86119002-98EC-42CB-875E-DC9E9C9C7C67}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,7 +48,6 @@ Global
 		{F51ECBBC-8078-4D85-A0C4-1DA2537B6532} = {5DC93ED2-C60A-4178-8B6E-45E45DE11C5B}
 		{6919485E-3367-494A-B9E4-8DBADCC0FD1F} = {09CDC25E-776B-473D-AF31-AE9B5AFF35F6}
 		{0339F59C-BFCC-43AD-88A3-D71C5ED2EB71} = {09CDC25E-776B-473D-AF31-AE9B5AFF35F6}
-		{86119002-98EC-42CB-875E-DC9E9C9C7C67} = {E63915DD-DD16-41AF-976D-0D1AAB2B1BE3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4B25238C-449C-458C-B8A7-AA32048D0BD8}

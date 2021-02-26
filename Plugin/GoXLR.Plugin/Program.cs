@@ -33,7 +33,7 @@ namespace GoXLR.Plugin
             serviceCollection.Configure<AppSettings>(configurationRoot);
 
             //Add TouchPortal Client:
-            TouchPortalClientConfiguration.ConfigureTouchPortalApi(serviceCollection);
+            serviceCollection.AddScoped<TouchPortalClient>();
 
             //Add WebSocket Server:
             serviceCollection.Configure<WebSocketServerSettings>(configurationRoot.GetSection("WebSocketServerSettings"));
@@ -52,15 +52,11 @@ namespace GoXLR.Plugin
 
             //Init TouchPortal:
             logger.LogInformation("Initializing TouchPortal client");
-            var manualResetEvent = new ManualResetEvent(false);
             var touchPortalClient = serviceProvider.GetRequiredService<TouchPortalClient>();
             await touchPortalClient.InitAsync();
             logger.LogInformation("TouchPortal client initialized");
 
             logger.LogInformation("Plugin is now running.");
-            
-            //When running under TouchPortal, Console.ReadLine would not work.
-            manualResetEvent.WaitOne();
         }
     }
 }

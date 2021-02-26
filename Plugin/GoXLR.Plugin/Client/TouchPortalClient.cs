@@ -1,14 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
+using GoXLR.Plugin.Models;
 using GoXLR.Server;
 using GoXLR.Server.Models;
 using Microsoft.Extensions.Logging;
-using TouchPortalApi.Interfaces;
-using TouchPortalApi.Models;
+using Microsoft.Extensions.Options;
 
 namespace GoXLR.Plugin.Client
 {
@@ -17,36 +21,33 @@ namespace GoXLR.Plugin.Client
         private const string ns = "oddbear.touchportal.goxlr";
 
         private readonly ILogger<TouchPortalClient> _logger;
-        private readonly Task<IMessageProcessor> _messageProcessorFactory;
+        private readonly AppSettings _settings;
         private readonly GoXLRServer _server;
-        
+        private readonly MessageProcessor _messageProcessor;
+
         private ClientIdentifier[] _clients = Array.Empty<ClientIdentifier>();
         private IReadOnlyCollection<string> _localAddresses = Array.Empty<string>();
-
-        private IMessageProcessor _messageProcessor;
-
+        
         public TouchPortalClient(ILogger<TouchPortalClient> logger,
-            Task<IMessageProcessor> messageProcessorFactory,
+            IOptions<AppSettings> settings,
             GoXLRServer server)
         {
             _logger = logger;
-            _messageProcessorFactory = messageProcessorFactory;
+            _settings = settings.Value;
             _server = server;
 
             _server.UpdateConnectedClientsEvent = UpdateClientState;
+            _messageProcessor = new MessageProcessor(logger, _settings);
         }
 
         public async Task InitAsync()
         {
-            //Will wait until connected:
-            _messageProcessor = await _messageProcessorFactory;
-
-            _messageProcessor.OnConnectEventHandler += () =>
+            _messageProcessor.OnInfo = (infoMessage) =>
             {
                 _logger.LogInformation("Connect Event: Plugin Connected to TouchPortal.");
                 UpdateClientState(Array.Empty<ClientIdentifier>());
             };
-            _messageProcessor.OnCloseEventHandler += () =>
+            _messageProcessor.OnDisconnect = (exception) =>
             {
                 _logger.LogInformation("Close Event: Plugin Disconnected from TouchPortal.");
 
@@ -55,16 +56,16 @@ namespace GoXLR.Plugin.Client
                 // or we can check if the parent process exists.
                 Environment.Exit(0);
             };
-            _messageProcessor.OnListChangeEventHandler += OnListChangeEventHandler;
-            _messageProcessor.OnActionEvent += OnActionEvent;
+            _messageProcessor.OnListChange = OnListChangeEventHandler;
+            _messageProcessor.OnActionEvent = OnActionEvent;
             
             _localAddresses = GetLocalAddresses();
 
             //Connecting to TouchPortal:
-            _ = _messageProcessor.Listen();
-            await _messageProcessor.TryPairAsync();
+            _messageProcessor.Connect();
         }
-        
+
+
         public void UpdateClientState(ClientIdentifier[] profilesIdentifiers)
         {
             _clients = profilesIdentifiers;
@@ -88,29 +89,13 @@ namespace GoXLR.Plugin.Client
                 clientChoices.AddRange(clients);
 
                 //Update states:
-                _messageProcessor.UpdateState(new StateUpdate
-                {
-                    Id = ns + ".single.clients.state.connected",
-                    Value = clients.FirstOrDefault() ?? "none"
-                });
-                _messageProcessor.UpdateState(new StateUpdate
-                {
-                    Id = ns + ".multiple.clients.states.count",
-                    Value = clients.Length.ToString()
-                });
+                _messageProcessor.UpdateState(".single.clients.state.connected", clients.FirstOrDefault() ?? "none");
+                _messageProcessor.UpdateState(".multiple.clients.states.count",clients.Length.ToString());
 
                 //Update choices:
-                _messageProcessor.UpdateChoice(new ChoiceUpdate
-                {
-                    Id = ns + ".multiple.routingtable.action.change.data.clients",
-                    Value = clientChoices.ToArray()
-                });
+                _messageProcessor.UpdateChoice(".multiple.routingtable.action.change.data.clients", clientChoices.ToArray());
 
-                _messageProcessor.UpdateChoice(new ChoiceUpdate
-                {
-                    Id = ns + ".multiple.profiles.action.change.data.clients",
-                    Value = clientChoices.ToArray()
-                });
+                _messageProcessor.UpdateChoice(".multiple.profiles.action.change.data.clients", clientChoices.ToArray());
             }
             catch (Exception e)
             {
@@ -125,10 +110,15 @@ namespace GoXLR.Plugin.Client
         /// <param name="listId"></param>
         /// <param name="instanceId"></param>
         /// <param name="value"></param>
-        private void OnListChangeEventHandler(string actionId, string listId, string instanceId, string value)
+        private void OnListChangeEventHandler(ListChangeMessage listChange)
         {
             try
             {
+                var actionId = listChange.ActionId;
+                var listId = listChange.ListId;
+                var instanceId = listChange.ListId;
+                var value = listChange.Value;
+
                 //Choice is changed: I can now update the next list:
                 _logger.LogInformation($"Choice Event: {nameof(actionId)}: '{actionId}', {nameof(listId)}: '{listId}', {nameof(instanceId)}: '{instanceId}', {nameof(value)}: '{value}'.");
 
@@ -147,12 +137,7 @@ namespace GoXLR.Plugin.Client
                     if (clientData is null)
                         return;
 
-                    _messageProcessor.UpdateChoice(new ChoiceUpdate
-                    {
-                        Id = ns + ".multiple.profiles.action.change.data.profiles",
-                        InstanceId = instanceId,
-                        Value = clientData.Profiles
-                    });
+                    _messageProcessor.UpdateChoice(".multiple.profiles.action.change.data.profiles", clientData.Profiles, instanceId);
                 }
             }
             catch (Exception e)
@@ -164,12 +149,13 @@ namespace GoXLR.Plugin.Client
         /// <summary>
         /// On a button press on the Touch interface client.
         /// </summary>
-        /// <param name="actionId">Id of the action</param>
-        /// <param name="datalist">Data list of the action</param>
-        private void OnActionEvent(string actionId, List<ActionData> datalist)
+        private void OnActionEvent(ActionMessage action)
         {
             try
             {
+                var actionId = action.ActionId;
+                var datalist = action.Data;
+
                 var dataValues = string.Join(", ", datalist.Select(kv => $"'{kv.Id}:{kv.Value}'"));
                 _logger.LogInformation($"Action Event: {nameof(actionId)}: '{actionId}', {nameof(datalist)}: ({dataValues})");
 
@@ -206,7 +192,7 @@ namespace GoXLR.Plugin.Client
             }
         }
 
-        private void RouteChange(string name, List<ActionData> datalist)
+        private void RouteChange(string name, ActionData[] datalist)
         {
             var dict = datalist
                 .ToDictionary(kv => kv.Id, kv => kv.Value);
@@ -224,7 +210,7 @@ namespace GoXLR.Plugin.Client
             _server.SetRouting(client, action, input, output);
         }
 
-        private void ProfileChange(string name, List<ActionData> datalist)
+        private void ProfileChange(string name, ActionData[] datalist)
         {
             var dict = datalist
                 .ToDictionary(kv => kv.Id, kv => kv.Value);
