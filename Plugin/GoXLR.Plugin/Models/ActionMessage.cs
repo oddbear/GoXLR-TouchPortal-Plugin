@@ -1,15 +1,14 @@
 ﻿namespace GoXLR.Plugin.Models
 {
-    public class ActionMessage : BaseMessage
-    {
-        public string PluginId { get; set; }
-        public string ActionId { get; set; }
-        public ActionData[] Data { get; set; }
-    }
+    public record ActionMessage(
+        string Type,
+        string PluginId,
+        string ActionId,
+        ActionData[] Data
+    ) : BaseMessage(Type);
 
-    public class ActionData
-    {
-        public string Id { get; set; }
-        public string Value { get; set; }
-    }
+    public record ActionData(
+        string Id,
+        string Value
+    );
 }
