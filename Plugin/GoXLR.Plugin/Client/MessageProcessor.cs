@@ -8,13 +8,14 @@ using System.Text.Json;
 using System.Threading;
 using GoXLR.Plugin.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GoXLR.Plugin.Client
 {
     public class MessageProcessor
     {
         private readonly ILogger _logger;
-        private readonly AppSettings _settings;
+        private readonly TouchPortalClientSettings _settings;
 
         private readonly Encoding _encoding;
         private readonly Socket _touchPortalSocket;
@@ -28,16 +29,23 @@ namespace GoXLR.Plugin.Client
         public Action<ListChangeMessage> OnListChange { get; set; }
         public Action<ActionMessage> OnActionEvent { get; set; }
 
-        public MessageProcessor(ILogger logger, AppSettings settings)
+        public MessageProcessor(ILogger<MessageProcessor> logger,
+            IOptions<TouchPortalClientSettings> settings)
         {
             _logger = logger;
-            _settings = settings;
+            _settings = settings.Value;
 
             _encoding = Encoding.ASCII;
             _touchPortalSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             _waitForInfo = new ManualResetEvent(false);
         }
 
+        /// <summary>
+        /// Updates a state in the TouchPortal App, ex. clients connected.
+        /// </summary>
+        /// <param name="stateId"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
         public bool UpdateState(string stateId, string value)
         {
             if (string.IsNullOrWhiteSpace(stateId) ||
@@ -58,6 +66,13 @@ namespace GoXLR.Plugin.Client
             return Send(json);
         }
 
+        /// <summary>
+        /// Updates a choice in the TouchPortal App, ex. profiles based on selected client.
+        /// </summary>
+        /// <param name="listId"></param>
+        /// <param name="values"></param>
+        /// <param name="instanceId"></param>
+        /// <returns></returns>
         public bool UpdateChoice(string listId, string[] values, string instanceId = null)
         {
             if (string.IsNullOrWhiteSpace(listId))
@@ -80,6 +95,9 @@ namespace GoXLR.Plugin.Client
             return Send(json);
         }
 
+        /// <summary>
+        /// Connects, pairs, listens and wait for pairing information.
+        /// </summary>
         public void Connect()
         {
             try
@@ -102,7 +120,13 @@ namespace GoXLR.Plugin.Client
                 //Wait for info:
                 if (TimeSpan.TryParse(_settings.InfoMessageTimeout, out var timeout) && timeout > TimeSpan.Zero)
                 {
-                    SendPair();
+                    var pairJson = JsonSerializer.Serialize(new Dictionary<string, object>
+                    {
+                        ["type"] = "pair",
+                        ["id"] = _settings.PluginId
+                    });
+
+                    Send(pairJson);
                     //Success true if message was received in time. False if timeout occurred.
                     var success = _waitForInfo.WaitOne(timeout);
                     _logger.LogInformation("InfoMessage success: " + success);
@@ -113,18 +137,12 @@ namespace GoXLR.Plugin.Client
                 //ignored
             }
         }
-
-        private void SendPair()
-        {
-            var json = JsonSerializer.Serialize(new Dictionary<string, object>
-            {
-                ["type"] = "pair",
-                ["id"] = _settings.PluginId
-            });
-
-            Send(json);
-        }
-
+        
+        /// <summary>
+        /// Sends a message to TouchPortal.
+        /// </summary>
+        /// <param name="json"></param>
+        /// <returns></returns>
         public bool Send(string json)
         {
             try
@@ -138,6 +156,10 @@ namespace GoXLR.Plugin.Client
             }
         }
 
+        /// <summary>
+        /// Message received.
+        /// </summary>
+        /// <param name="json"></param>
         private void OnMessage(string json)
         {
             var jsonOptions = new JsonSerializerOptions {PropertyNamingPolicy = JsonNamingPolicy.CamelCase};
@@ -169,6 +191,10 @@ namespace GoXLR.Plugin.Client
             }
         }
         
+        /// <summary>
+        /// Creates a listener thread. This thread is a foreground thread.
+        /// The application will be running as long as this thread is running.
+        /// </summary>
         private void ListenerThreadSync()
         {
             while (true)
@@ -180,7 +206,7 @@ namespace GoXLR.Plugin.Client
 
                     _logger.LogInformation(socketMessage);
 
-                    this.OnMessage(socketMessage);
+                    OnMessage(socketMessage);
                 }
                 catch (IOException exception)
                 {
@@ -194,9 +220,14 @@ namespace GoXLR.Plugin.Client
             }
         }
 
+        /// <summary>
+        /// Closes the TouchPortal sockets.
+        /// And most importantly, interrupts the foreground thread.
+        /// </summary>
+        /// <param name="exception"></param>
         public void Close(Exception exception)
         {
-            _logger.LogInformation("Closing");
+            _logger.LogInformation($"Closing: {exception}");
 
             _listenerThread?.Interrupt();
             _streamWriter?.Close();

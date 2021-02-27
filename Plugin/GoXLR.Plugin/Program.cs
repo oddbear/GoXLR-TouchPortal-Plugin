@@ -1,7 +1,5 @@
 using System;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using GoXLR.Plugin.Client;
 using GoXLR.Server;
 using GoXLR.Server.Models;
@@ -33,7 +31,9 @@ namespace GoXLR.Plugin
             serviceCollection.Configure<AppSettings>(configurationRoot);
 
             //Add TouchPortal Client:
+            serviceCollection.Configure<TouchPortalClientSettings>(configurationRoot.GetSection("TouchPortalClientSettings"));
             serviceCollection.AddScoped<TouchPortalClient>();
+            serviceCollection.AddScoped<MessageProcessor>();
 
             //Add WebSocket Server:
             serviceCollection.Configure<WebSocketServerSettings>(configurationRoot.GetSection("WebSocketServerSettings"));
