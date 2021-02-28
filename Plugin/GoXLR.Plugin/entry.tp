@@ -1,6 +1,6 @@
 {
   "sdk": 2,
-  "version": 1,
+  "version": 6,
   "name": "GoXLR TouchPortal Plugin",
   "id": "oddbear.touchportal.goxlr",
   "configuration": {
