@@ -117,16 +117,18 @@ namespace GoXLR.Plugin.Client
                 _listenerThread = new Thread(ListenerThreadSync) { IsBackground = false };
                 _listenerThread.Start();
 
+                //Pair:
+                var pairJson = JsonSerializer.Serialize(new Dictionary<string, object>
+                {
+                    ["type"] = "pair",
+                    ["id"] = _settings.PluginId
+                });
+
+                Send(pairJson);
+
                 //Wait for info:
                 if (TimeSpan.TryParse(_settings.InfoMessageTimeout, out var timeout) && timeout > TimeSpan.Zero)
                 {
-                    var pairJson = JsonSerializer.Serialize(new Dictionary<string, object>
-                    {
-                        ["type"] = "pair",
-                        ["id"] = _settings.PluginId
-                    });
-
-                    Send(pairJson);
                     //Success true if message was received in time. False if timeout occurred.
                     var success = _waitForInfo.WaitOne(timeout);
                     _logger.LogInformation("InfoMessage success: " + success);
