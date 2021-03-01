@@ -70,7 +70,15 @@ namespace GoXLR.Plugin.Client
                     .Select(identifier => identifier.ClientIpAddress)
                     .ToArray();
 
-                var clientChoices = new List<string> { "default" };
+                //Adds a random string of \x02 chars to the default name.
+                //This char is there, but it's invisible. Therefor, the user will se default, but it's really a different value.
+                //This helps the bug where update of the same value does not trigger a refresh (or it's inconsistent behaviour).
+                var random = new Random();
+                var randomNumber = random.Next(1, 100);
+                var invisibleString = new string(Enumerable.Repeat('\x02', randomNumber).ToArray());
+
+                //With the + str, default will always be a different value:
+                var clientChoices = new List<string> { "default" + invisibleString };
                 clientChoices.AddRange(clients);
 
                 //Update states:
