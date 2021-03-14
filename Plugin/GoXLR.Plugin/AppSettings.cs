@@ -6,7 +6,15 @@ namespace GoXLR.Plugin
     {
         public WebSocketServerSettings WebSocketServerSettings { get; set; }
 
-        //Put application specific stuff here.
-        public string ReconnectWaitTime { get; set; } = "00:00:05";
+        public TouchPortalClientSettings TouchPortalClientSettings { get; set; }
+    }
+
+    public class TouchPortalClientSettings
+    {
+        public string ServerIp { get; set; } = "127.0.0.1";
+        public int ServerPort { get; set; } = 12136;
+        public string PluginId { get; set; } = "oddbear.touchportal.goxlr";
+
+        public string InfoMessageTimeout { get; set; } = "00:00:05";
     }
 }

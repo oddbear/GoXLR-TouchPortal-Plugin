@@ -18,24 +18,31 @@ namespace GoXLR.Server
         
         private readonly WebSocketServerSettings _settings;
         private readonly Dictionary<ClientIdentifier, IWebSocketConnection> _sockets = new();
-        private readonly Dictionary<ClientIdentifier, ClientData> _clientData = new();
+        
+        public List<ClientData> ClientData { get; } = new();
 
-        public Action<ClientIdentifier[]> UpdateConnectedClientsEvent { get; set; }
+        public Action UpdateConnectedClientsEvent { get; set; }
 
         public GoXLRServer(ILogger<GoXLRServer> logger,
             IOptions<WebSocketServerSettings> options)
         {
             _logger = logger;
-
             _settings = options.Value;
         }
 
+        /// <summary>
+        /// Starts the WebSockets server.
+        /// </summary>
         public void Init()
         {
             var server = new WebSocketServer($"ws://{_settings.IpAddress}:{_settings.Port}/?GOXLRApp");
             server.Start(OnClientConnecting);
         }
 
+        /// <summary>
+        /// Setting up Fleck WebSocket callbacks.
+        /// </summary>
+        /// <param name="socket"></param>
         private void OnClientConnecting(IWebSocketConnection socket)
         {
             var connectionInfo = socket.ConnectionInfo;
@@ -46,8 +53,6 @@ namespace GoXLR.Server
                 _sockets.Add(identifier, socket);
                 _logger.LogInformation($"Connection opened {socket.ConnectionInfo.ClientIpAddress}.");
                 
-                UpdateConnectedClientsEvent?.Invoke(_sockets.Keys.ToArray());
-
                 //Get updated profiles:
                 FetchProfiles(identifier);
             };
@@ -55,9 +60,11 @@ namespace GoXLR.Server
             socket.OnClose = () =>
             {
                 _sockets.Remove(identifier);
+                ClientData.RemoveAll(clientData => clientData.ClientIdentifier == identifier);
+
                 _logger.LogInformation($"Connection closed {socket.ConnectionInfo.ClientIpAddress}.");
 
-                UpdateConnectedClientsEvent?.Invoke(_sockets.Keys.ToArray());
+                UpdateConnectedClientsEvent?.Invoke();
             };
 
             socket.OnBinary = (bytes) =>
@@ -108,7 +115,10 @@ namespace GoXLR.Server
 
                         //Set client data:
                         var clientData = new ClientData(identifier, profiles);
-                        _clientData[identifier] = clientData;
+                        ClientData.Add(clientData);
+
+                        //Update client list, with data:
+                        UpdateConnectedClientsEvent?.Invoke();
                     }
                     else
                     {
@@ -126,6 +136,10 @@ namespace GoXLR.Server
             socket.OnError = (exception) => _logger.LogError(exception.ToString());
         }
 
+        /// <summary>
+        /// Fetching profiles from the selected GoXLR App.
+        /// </summary>
+        /// <param name="clientIdentifier"></param>
         private void FetchProfiles(ClientIdentifier clientIdentifier)
         {
             if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))
@@ -143,19 +157,12 @@ namespace GoXLR.Server
             //Send:
             _ = connection.Send(json);
         }
-
-        public ClientData GetClientData(ClientIdentifier clientIdentifier)
-        {
-            if (clientIdentifier is null || !_clientData.TryGetValue(clientIdentifier, out var clientData))
-            {
-                _logger.LogWarning($"ClientData missing for: '{clientIdentifier}'");
-                return null;
-            }
-
-            return clientData;
-
-        }
         
+        /// <summary>
+        /// Sets a profile in the selected GoXLR App.
+        /// </summary>
+        /// <param name="clientIdentifier"></param>
+        /// <param name="profileName"></param>
         public void SetProfile(ClientIdentifier clientIdentifier, string profileName)
         {
             if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))
@@ -173,7 +180,14 @@ namespace GoXLR.Server
             //Send:
             _ = connection.Send(json);
         }
-        
+
+        /// <summary>
+        /// Sets a routing in the selected GoXLR App.
+        /// </summary>
+        /// <param name="clientIdentifier"></param>
+        /// <param name="action"></param>
+        /// <param name="input"></param>
+        /// <param name="output"></param>
         public void SetRouting(ClientIdentifier clientIdentifier, string action, string input, string output)
         {
             if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))

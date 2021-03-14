@@ -1,7 +1,5 @@
 using System;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using GoXLR.Plugin.Client;
 using GoXLR.Server;
 using GoXLR.Server.Models;
@@ -13,7 +11,7 @@ namespace GoXLR.Plugin
 {
     public class Program
     {
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
             var configurationRoot = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetParent(AppContext.BaseDirectory).FullName)
@@ -33,7 +31,9 @@ namespace GoXLR.Plugin
             serviceCollection.Configure<AppSettings>(configurationRoot);
 
             //Add TouchPortal Client:
-            TouchPortalClientConfiguration.ConfigureTouchPortalApi(serviceCollection);
+            serviceCollection.Configure<TouchPortalClientSettings>(configurationRoot.GetSection("TouchPortalClientSettings"));
+            serviceCollection.AddScoped<TouchPortalClient>();
+            serviceCollection.AddScoped<MessageProcessor>();
 
             //Add WebSocket Server:
             serviceCollection.Configure<WebSocketServerSettings>(configurationRoot.GetSection("WebSocketServerSettings"));
@@ -52,15 +52,11 @@ namespace GoXLR.Plugin
 
             //Init TouchPortal:
             logger.LogInformation("Initializing TouchPortal client");
-            var manualResetEvent = new ManualResetEvent(false);
             var touchPortalClient = serviceProvider.GetRequiredService<TouchPortalClient>();
-            await touchPortalClient.InitAsync();
+            touchPortalClient.Init();
             logger.LogInformation("TouchPortal client initialized");
 
             logger.LogInformation("Plugin is now running.");
-            
-            //When running under TouchPortal, Console.ReadLine would not work.
-            manualResetEvent.WaitOne();
         }
     }
 }

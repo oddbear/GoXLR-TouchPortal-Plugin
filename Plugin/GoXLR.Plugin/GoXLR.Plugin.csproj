@@ -13,7 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\TouchPortalAPI\TouchPortalApi\TouchPortalApi.csproj" />
     <ProjectReference Include="..\..\Server\GoXLR.Server\GoXLR.Server.csproj" />
   </ItemGroup>
 

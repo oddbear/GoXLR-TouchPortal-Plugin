@@ -59,10 +59,12 @@ namespace GoXLR.Desktop.ViewModels
         {
             var client = SelectedClient;
             
-            var clientData = _server.GetClientData(client);
+            var profiles = _server.ClientData
+                       .FirstOrDefault(clientData => clientData.ClientIdentifier == client)
+                       ?.Profiles ?? Array.Empty<string>();
 
-            Profiles = clientData?.Profiles ?? Array.Empty<string>();
-            SelectedProfile = Profiles.FirstOrDefault();
+            Profiles = profiles;
+            SelectedProfile = profiles.FirstOrDefault();
 
             LogInformation($"Profiles updated: {string.Join(", ", Profiles)}");
         }
@@ -91,10 +93,14 @@ namespace GoXLR.Desktop.ViewModels
             LogInformation($"Set Routing: {input}, {output}, {action}");
         }
         
-        public void UpdateClientState(ClientIdentifier[] clients)
+        public void UpdateClientState()
         {
-            Clients = clients.ToList();
-            
+            var clients = _server.ClientData
+                .Select(clientData => clientData.ClientIdentifier)
+                .ToList();
+
+            Clients = clients;
+
             SelectedClient ??= clients.FirstOrDefault();
             //OnPropertyChanged(nameof(Clients));
 

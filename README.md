@@ -56,6 +56,5 @@ Tooling needs .NET Desktop Runtime 5.0.0 from https://dotnet.microsoft.com/downl
 
 ### Dependencies
 
-- [.Net TouchPortalApi](https://github.com/tlewis17/TouchPortalAPI)
 - [Fleck](https://github.com/statianzo/Fleck)
 - [Fody.PropertyChanged](https://github.com/Fody/PropertyChanged)
