@@ -19,6 +19,7 @@
           "prefix": "GoXLR:",
           "name": "GoXLR Routing Table Change",
           "type": "communicate",
+          "tryInline": true,
           "format": "Input {$oddbear.touchportal.goxlr.single.routingtable.action.change.data.inputs$} Output {$oddbear.touchportal.goxlr.single.routingtable.action.change.data.outputs$} Action {$oddbear.touchportal.goxlr.single.routingtable.action.change.data.actions$}",
           "description": "The profile to select on the GoXLR device.",
           "data": [
@@ -71,6 +72,7 @@
           "format": "Select Profile: {$oddbear.touchportal.goxlr.single.profiles.action.change.data.profiles$}",
           "description": "The profile to select on the GoXLR device.",
           "type": "communicate",
+          "tryInline": true,
           "data": [
             {
               "id": "oddbear.touchportal.goxlr.single.profiles.action.change.data.profiles",

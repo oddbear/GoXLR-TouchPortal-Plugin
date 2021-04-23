@@ -3,50 +3,138 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using GoXLR.Plugin.Models;
 using GoXLR.Server;
 using GoXLR.Server.Models;
 using Microsoft.Extensions.Logging;
+using TouchPortalSDK;
+using TouchPortalSDK.Interfaces;
+using TouchPortalSDK.Messages.Events;
+using TouchPortalSDK.Messages.Models;
 
 namespace GoXLR.Plugin.Client
 {
-    public class TouchPortalClient
+    public class GoXLRPlugin : ITouchPortalEventHandler
     {
-        private readonly ILogger<TouchPortalClient> _logger;
+        public string PluginId => "oddbear.touchportal.goxlr";
+
+        private readonly ITouchPortalClient _client;
         private readonly GoXLRServer _server;
-        private readonly MessageProcessor _messageProcessor;
+        private readonly ILogger<GoXLRPlugin> _logger;
         private readonly IReadOnlyCollection<string> _localAddresses;
-        
-        public TouchPortalClient(ILogger<TouchPortalClient> logger,
-            GoXLRServer server,
-            MessageProcessor messageProcessor)
+
+        public GoXLRPlugin(ITouchPortalClientFactory clientFactory,
+            GoXLRServer goXLRServer,
+            ILogger<GoXLRPlugin> logger)
         {
+            //Set the event handler for TouchPortal:
+            _client = clientFactory.Create(this);
+            //Set the event handler for GoXLR connected:
+            _server = goXLRServer;
             _logger = logger;
-            _server = server;
-            _messageProcessor = messageProcessor;
             _localAddresses = GetLocalAddresses();
 
             //Set the event handler for GoXLR Clients connected:
             _server.UpdateConnectedClientsEvent = UpdateClientState;
-            _messageProcessor.OnInfo = (infoMessage) =>
-            {
-                _logger.LogInformation("Connect Event: Plugin Connected to TouchPortal.");
-                UpdateClientState();
-            };
-            _messageProcessor.OnDisconnect = (exception) =>
-            {
-                _logger.LogInformation("Close Event: Plugin Disconnected from TouchPortal.");
-                Environment.Exit(0);
-            };
-            _messageProcessor.OnListChange = OnListChangeEventHandler;
-            _messageProcessor.OnActionEvent = OnActionEvent;
-
         }
-
+        
         public void Init()
         {
             //Connecting to TouchPortal:
-            _messageProcessor.Connect();
+            _client.Connect();
+        }
+
+        public void OnInfoEvent(InfoEvent message)
+        {
+            _logger.LogInformation("Connect Event: Plugin Connected to TouchPortal.");
+            UpdateClientState();
+        }
+
+        /// <summary>
+        /// Event fired when selecting a item from the dropdown in the TP Configurator.
+        /// Updates a second list (instanceId) with the values from the selected client name/ip.
+        /// </summary>
+        /// <param name="message"></param>
+        public void OnListChangedEvent(ListChangeEvent message)
+        {
+            try
+            {
+                //Choice is changed: I can now update the next list:
+                _logger.LogInformation($"Choice Event: {message.ListId}'.");
+
+                if (string.IsNullOrWhiteSpace(message.InstanceId))
+                    return;
+
+                //Profiles client selected, fetch profiles for client:
+                if (message.ActionId.EndsWith(".multiple.profiles.action.change") &&
+                    message.ListId.EndsWith(".multiple.profiles.action.change.data.clients"))
+                {
+                    var client = GetClients(message.Value);
+                    if (client is null)
+                        return;
+
+                    var clientData = GetClients(message.Value);
+                    if (clientData is null)
+                        return;
+
+                    _client.ChoiceUpdate(PluginId + ".multiple.profiles.action.change.data.profiles", clientData.Profiles, message.InstanceId);
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.ToString());
+            }
+        }
+
+        public void OnActionEvent(ActionEvent message)
+        {
+            try
+            {
+                _logger.LogInformation($"Action Event: {message.ActionId}");
+
+                var actionId = message.ActionId;
+
+                //Routing change:
+                if (actionId.EndsWith(".routingtable.action.change"))
+                {
+                    //Can be both <pluginid>.<type>.routingtable.action.change,
+                    // where <type> is single or multiple.
+                    RouteChange(actionId + ".data", message.Data);
+                }
+
+                //Profile change:
+
+                if (actionId.EndsWith(".profiles.action.change"))
+                {
+                    //Can be both <pluginid>.<type>.profiles.action.change,
+                    // where <type> is single or multiple.
+                    ProfileChange(actionId + ".data", message.Data);
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.ToString());
+            }
+        }
+
+        public void OnClosedEvent(string message)
+        {
+            _logger.LogInformation("Close Event: Plugin Disconnected from TouchPortal.");
+            Environment.Exit(0);
+        }
+
+        public void OnBroadcastEvent(BroadcastEvent message)
+        {
+            //NotImplemented
+        }
+
+        public void OnSettingsEvent(SettingsEvent message)
+        {
+            //NotImplemented
+        }
+
+        public void OnUnhandledEvent(string jsonMessage)
+        {
+            //NotImplemented
         }
 
         /// <summary>
@@ -54,12 +142,6 @@ namespace GoXLR.Plugin.Client
         /// </summary>
         public void UpdateClientState()
         {
-            if (_messageProcessor is null)
-            {
-                _logger.LogWarning("MessageProcess not Initialized, but a client was connected.");
-                return;
-            }
-
             try
             {
                 //Since ports are quite random, we only use the ip when connecting to the plugin.
@@ -74,84 +156,13 @@ namespace GoXLR.Plugin.Client
                 clientChoices.AddRange(clients);
 
                 //Update states:
-                _messageProcessor.UpdateState(".single.clients.state.connected", clients.FirstOrDefault() ?? "none");
-                _messageProcessor.UpdateState(".multiple.clients.states.count",clients.Length.ToString());
+                _client.StateUpdate(PluginId + ".single.clients.state.connected", clients.FirstOrDefault() ?? "none");
+                _client.StateUpdate(PluginId + ".multiple.clients.states.count", clients.Length.ToString());
 
                 //Update choices:
-                _messageProcessor.UpdateChoice(".multiple.routingtable.action.change.data.clients", clientChoices.ToArray());
+                _client.ChoiceUpdate(PluginId + ".multiple.routingtable.action.change.data.clients", clientChoices.ToArray());
 
-                _messageProcessor.UpdateChoice(".multiple.profiles.action.change.data.clients", clientChoices.ToArray());
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e.ToString());
-            }
-        }
-
-        /// <summary>
-        /// Event fired when selecting a item from the dropdown in the TP Configurator.
-        /// Updates a second list (instanceId) with the values from the selected client name/ip.
-        /// </summary>
-        /// <param name="listChange"></param>
-        private void OnListChangeEventHandler(ListChangeMessage listChange)
-        {
-            try
-            {
-                //Choice is changed: I can now update the next list:
-                _logger.LogInformation($"Choice Event: {listChange}'.");
-
-                if (string.IsNullOrWhiteSpace(listChange.InstanceId))
-                    return;
-
-                //Profiles client selected, fetch profiles for client:
-                if (listChange.ActionId.EndsWith(".multiple.profiles.action.change") &&
-                    listChange.ListId.EndsWith(".multiple.profiles.action.change.data.clients"))
-                {
-                    var client = GetClients(listChange.Value);
-                    if (client is null)
-                        return;
-
-                    var clientData = GetClients(listChange.Value);
-                    if (clientData is null)
-                        return;
-
-                    _messageProcessor.UpdateChoice(".multiple.profiles.action.change.data.profiles", clientData.Profiles, listChange.InstanceId);
-                }
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e.ToString());
-            }
-        }
-
-        /// <summary>
-        /// On a button press on the Touch interface client.
-        /// </summary>
-        /// <param name="action"></param>
-        private void OnActionEvent(ActionMessage action)
-        {
-            try
-            {
-                _logger.LogInformation($"Action Event: {action}");
-
-                var actionId = action.ActionId;
-
-                //Routing change:
-                if (actionId.EndsWith(".routingtable.action.change"))
-                {
-                    //Can be both <pluginid>.<type>.routingtable.action.change,
-                    // where <type> is single or multiple.
-                    RouteChange(actionId + ".data", action.Data);
-                }
-
-                //Profile change:
-
-                if (actionId.EndsWith(".profiles.action.change"))
-                {
-                    //Can be both <pluginid>.<type>.profiles.action.change,
-                    // where <type> is single or multiple.
-                    ProfileChange(actionId + ".data", action.Data);
-                }
+                _client.ChoiceUpdate(PluginId + ".multiple.profiles.action.change.data.clients", clientChoices.ToArray());
             }
             catch (Exception e)
             {
@@ -164,7 +175,7 @@ namespace GoXLR.Plugin.Client
         /// </summary>
         /// <param name="name"></param>
         /// <param name="datalist"></param>
-        private void RouteChange(string name, ActionData[] datalist)
+        private void RouteChange(string name, IReadOnlyCollection<ActionDataSelected> datalist)
         {
             var dict = datalist
                 .ToDictionary(kv => kv.Id, kv => kv.Value);
@@ -172,9 +183,9 @@ namespace GoXLR.Plugin.Client
             dict.TryGetValue(name + ".clients", out var clientIp);
 
             var client = GetClients(clientIp);
-            if(client is null)
+            if (client is null)
                 return;
-            
+
             var input = dict[name + ".inputs"];
             var output = dict[name + ".outputs"];
             var action = dict[name + ".actions"];
@@ -187,7 +198,7 @@ namespace GoXLR.Plugin.Client
         /// </summary>
         /// <param name="name"></param>
         /// <param name="datalist"></param>
-        private void ProfileChange(string name, ActionData[] datalist)
+        private void ProfileChange(string name, IReadOnlyCollection<ActionDataSelected> datalist)
         {
             var dict = datalist
                 .ToDictionary(kv => kv.Id, kv => kv.Value);
@@ -217,8 +228,8 @@ namespace GoXLR.Plugin.Client
             {
                 //Try to use a local IP as client first:
                 return clients.FirstOrDefault(clientData => _localAddresses.Contains(clientData.ClientIdentifier.ClientIpAddress))
-                //Or just give me the first one:
-                    ?? clients.FirstOrDefault();
+                       //Or just give me the first one:
+                       ?? clients.FirstOrDefault();
             }
 
             //Try to find a exact match:
