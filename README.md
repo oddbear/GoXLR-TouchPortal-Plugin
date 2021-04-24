@@ -19,8 +19,8 @@ Download latest .NET Runtime from (5.0.0 or higher) https://dotnet.microsoft.com
 
 Download the latest tpp file from [releases](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases) (under assets):
 
-- Plugin for [Windows](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.5-beta/TouchPortal.GoXLR.Plugin.Windows.tpp)
-- Plugin for [Mac OS X](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.5-beta/TouchPortal.GoXLR.Plugin.MacOSX.tpp)
+- Plugin for [Windows](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.6/TouchPortal.GoXLR.Plugin.Windows.tpp)
+- Plugin for [Mac OS X](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.6/TouchPortal.GoXLR.Plugin.MacOSX.tpp)
 
 Install tpp file from TouchPortal or unzip .tpp file to (Windows): `%appdata%\TouchPortal\plugins\GoXLR.Plugin`
 
@@ -45,8 +45,8 @@ If there is any problems, try restarting the GoXLR App.
 Tooling used for development/trubleshooting. GUI Server and Client for simulating a device or the plugin.
 Tooling needs .NET Desktop Runtime 5.0.0 from https://dotnet.microsoft.com/download/dotnet/5.0
 
-- [GoXLR Simulator](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.5-beta/Windows.GUI.Tooling.GoXLR.Simulator.zip)
-- [Plugin Simulator](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.5-beta/Windows.GUI.Tooling.Plugin.Simulator.zip)
+- [GoXLR Simulator](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.6/Windows.GUI.Tooling.GoXLR.Simulator.zip)
+- [Plugin Simulator](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.6/Windows.GUI.Tooling.Plugin.Simulator.zip)
 
 ### Known issues
 
@@ -57,4 +57,5 @@ Tooling needs .NET Desktop Runtime 5.0.0 from https://dotnet.microsoft.com/downl
 ### Dependencies
 
 - [Fleck](https://github.com/statianzo/Fleck)
-- [Fody.PropertyChanged](https://github.com/Fody/PropertyChanged)
+- [TouchPortalSDK](https://github.com/oddbear/TouchPortalSDK)
+- [Fody.PropertyChanged](https://github.com/Fody/PropertyChanged) (Tooling only)
