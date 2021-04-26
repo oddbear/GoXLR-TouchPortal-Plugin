@@ -50,7 +50,6 @@ Tooling needs .NET Desktop Runtime 5.0.0 from https://dotnet.microsoft.com/downl
 
 ### Known issues
 
-- Unicode characters in profile names is not shown correctly (should be fixed with TouchPortal 2.3 update).
 - Cannot run at the same time as other plugins using same port (external limitation).
 - Routing on and off Status not shown (planned update to the GoXLR App).
 
