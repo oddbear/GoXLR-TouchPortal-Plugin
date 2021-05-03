@@ -24,11 +24,11 @@ Download the latest tpp file from [releases](https://github.com/oddbear/GoXLR-To
 
 Install tpp file from TouchPortal or unzip .tpp file to (Windows): `%appdata%\TouchPortal\plugins\GoXLR.Plugin`
 
-This folder should then contain the `GoXLR.Plugin.exe and` `entry.tp`
+This folder should then contain the `GoXLR.Plugin.exe` and `entry.tp`
 
 ### Configuration
 
-1. Start TouchPortal and accept/trust the plugin, and the firewall prompt.
+1. Start TouchPortal and accept/trust the plugin, and the firewall prompt [(se Wiki for more)](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/wiki/Setting-up-Firewall).
 2. Start GoXLR App, and check that the Connect/Reconnect is configured (under 'SYSTEM' > 'Global Settings').
    1. TouchPortal on same computer, uncheck 'Streamdeck on non-GOXLR PC'.
    2. TouchPortal on another computer, check, and provide the IP.
