@@ -54,6 +54,7 @@ Tooling needs .NET Desktop Runtime 5.0.0 from https://dotnet.microsoft.com/downl
 
 - Cannot run at the same time as other plugins using same port (external limitation).
 - Routing on and off Status not shown (planned update to the GoXLR App).
+- Or check out [Issues](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/issues) for things being working on.
 
 ### Dependencies
 
