@@ -13,6 +13,8 @@ Additional features:
 - Possible to control multiple PCs
 - Status indicators: client count, and client name (when single pc)
 
+For aditional information, check the [Wiki](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/wiki)
+
 ### Setup:
 
 Download latest .NET Runtime from (5.0.0 or higher) https://dotnet.microsoft.com/download
