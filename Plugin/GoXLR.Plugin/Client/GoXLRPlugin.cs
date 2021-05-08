@@ -150,6 +150,8 @@ namespace GoXLR.Plugin.Client
                 var clients = _server.ClientData
                     .Select(clientData => clientData.ClientIdentifier)
                     .Select(identifier => identifier.ClientIpAddress)
+                    //Distinct since GoXLR right now does not close the old connection on reconnect:
+                    .Distinct()
                     .ToArray();
 
                 var clientChoices = new List<string> { "default" };
@@ -217,7 +219,7 @@ namespace GoXLR.Plugin.Client
         /// <summary>
         /// Get client data from a connected client name/ip.
         /// </summary>
-        /// <param name="clientIp"></param>
+        /// <param name="clientIp">Client value/ip from the TouchPortal dropdown.</param>
         /// <returns></returns>
         private ClientData GetClients(string clientIp)
         {
@@ -232,9 +234,9 @@ namespace GoXLR.Plugin.Client
                        ?? clients.FirstOrDefault();
             }
 
-            //Try to find a exact match:
+            //Try to find a exact match (last is the most recent connection):
             return clients
-                .FirstOrDefault(clientData => clientData.ClientIdentifier.ClientIpAddress == clientIp);
+                .LastOrDefault(clientData => clientData.ClientIdentifier.ClientIpAddress == clientIp);
         }
 
         /// <summary>
