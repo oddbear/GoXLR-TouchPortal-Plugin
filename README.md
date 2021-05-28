@@ -45,7 +45,8 @@ If there is any problems, try restarting the GoXLR App.
 ### Other plugins and tools for GoXLR users
 
 - [Audio Monitor](https://github.com/oddbear/TouchPortal.Plugin.AudioMonitor)
-> Audio Monitor Meter for your `Char Mic`, `RTX Voice` etc. on your device through Touch Portal.
+> Audio Monitor Meter for your `Char Mic`, `RTX Voice` etc. on your device through Touch Portal.<br />
+> This is helpfull after the 2021 patch that made it possible to free up a fader by moving the `Chat Mic` to the `Cough` button.
 - [HotKey](https://github.com/oddbear/TouchPortal.Plugin.HotKey)
 > Adds keyboard hotkeys to Touch Portal.
 - [GoXLR Force Defaults](https://github.com/oddbear/GoXLR-Force-Defaults)
