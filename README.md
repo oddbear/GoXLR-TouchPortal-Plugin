@@ -36,11 +36,18 @@ This folder should then contain the `GoXLR.Plugin.exe` and `entry.tp`
    2. TouchPortal on another computer, check, and provide the IP.
 3. If you changed anything, restart the GoXLR App (this is important, as it only connects to the plugin on startup).
 
-### Other
+### Other Information
 
 TouchPortal with the plugin **must** be started **before** the GoXLR App
 If **any** StreamDeck changes is done in the GoXLR App 'Global Settings', the GoXLR App would **must** be restarted *(this is a limitation by the GoXLR App)*.
 If there is any problems, try restarting the GoXLR App.
+
+### Other relevant plugins
+
+- [Audio Monitor](https://github.com/oddbear/TouchPortal.Plugin.AudioMonitor)
+> Meter for your Char Mic etc.
+- [HotKey](https://github.com/oddbear/TouchPortal.Plugin.HotKey)
+> Adds keyboard hotkeys to Touch Portal.
 
 ### Tooling (Windows only)
 
