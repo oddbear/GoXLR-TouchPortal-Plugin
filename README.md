@@ -42,7 +42,7 @@ TouchPortal with the plugin **must** be started **before** the GoXLR App
 If **any** StreamDeck changes is done in the GoXLR App 'Global Settings', the GoXLR App would **must** be restarted *(this is a limitation by the GoXLR App)*.
 If there is any problems, try restarting the GoXLR App.
 
-### Other relevant plugins
+### Other relevant plugins for GoXLR owners
 
 - [Audio Monitor](https://github.com/oddbear/TouchPortal.Plugin.AudioMonitor)
 > Meter for your Char Mic etc.
