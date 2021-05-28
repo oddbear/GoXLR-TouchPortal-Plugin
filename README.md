@@ -47,11 +47,11 @@ If there is any problems, try restarting the GoXLR App.
 - [Audio Monitor](https://github.com/oddbear/TouchPortal.Plugin.AudioMonitor)
 > Audio Monitor Meter for your `Char Mic`, `RTX Voice` etc. on your device through Touch Portal.<br />
 > This is helpfull after the 2021 patch that made it possible to free up a fader by moving the `Chat Mic` to the `Cough` button.
-- [HotKey](https://github.com/oddbear/TouchPortal.Plugin.HotKey)
-> Adds keyboard hotkeys to Touch Portal.
 - [GoXLR Force Defaults](https://github.com/oddbear/GoXLR-Force-Defaults)
 > A Windows Service that automaticly changes the default audio devices to be correctly for the GoXLR.<br />
 > It's a known problem that Windows tries to be helpfull and changes the default devices, volume, mute etc. at it's own will.
+- [HotKey](https://github.com/oddbear/TouchPortal.Plugin.HotKey)
+> Adds keyboard hotkeys to Touch Portal.
 
 ### Tooling (Windows only)
 
