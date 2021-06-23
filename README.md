@@ -55,7 +55,7 @@ If there is any problems, try restarting the GoXLR App.
 
 ### Tooling (Windows only)
 
-Tooling used for development/trubleshooting. GUI Server and Client for simulating a device or the plugin.
+Tooling used for development/troubleshooting. GUI Server and Client for simulating a device or the plugin.
 Tooling needs .NET Desktop Runtime 5.0.0 from https://dotnet.microsoft.com/download/dotnet/5.0
 
 - [GoXLR Simulator](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.6/Windows.GUI.Tooling.GoXLR.Simulator.zip)
