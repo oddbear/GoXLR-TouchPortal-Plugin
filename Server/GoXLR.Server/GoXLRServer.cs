@@ -101,8 +101,14 @@ namespace GoXLR.Server
                     var root = document.RootElement;
                     var propertyAction = root.GetProperty("action").GetString();
                     var propertyEvent = root.GetProperty("event").GetString();
-                    
-                    if (propertyAction == "com.tchelicon.goXLR.ChangeProfile" &&
+
+                    var changeProfileActions = new[]
+                    {
+                        "com.tchelicon.goxlr.profilechange", //SD plugin v0.17+
+                        "com.tchelicon.goXLR.ChangeProfile" //obsolete pre-0.17
+                    };
+
+                    if (changeProfileActions.Contains(propertyAction) &&
                         propertyEvent == "sendToPropertyInspector")
                     {
                         //Format:
