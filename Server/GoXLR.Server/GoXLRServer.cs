@@ -99,8 +99,8 @@ namespace GoXLR.Server
                         return;
 
                     var root = document.RootElement;
-                    var propertyAction = root.GetProperty("action").GetString();
-                    var propertyEvent = root.GetProperty("event").GetString();
+                    var propertyAction = root.GetValue<string>("action");
+                    var propertyEvent = root.GetValue<string>("event");
 
                     var changeProfileActions = new[]
                     {
@@ -128,12 +128,12 @@ namespace GoXLR.Server
                     }
                     else
                     {
-                        _logger.LogWarning("Unknown contextId from GoXLR.");
+                        _logger.LogWarning($"Unknown event '{propertyEvent}' and action '{propertyAction}' from GoXLR.");
                     }
                 }
-                catch (Exception e)
+                catch (Exception exception)
                 {
-                    _logger.LogError(e.ToString());
+                    _logger.LogError(exception.ToString());
                 }
             };
 
