@@ -3,7 +3,7 @@ A TouchPortal port of the StreamDeck plugin by using the same API from the GoXLR
 
 Created for **both Windows and Mac OS X** (different builds)
 
-WARNING: From next version (1.4.4+) of the GoXLR App there will be some breaking changes for this plugin. Therefor a updated version of this plugin is required (v0.17.0+). <br />
+WARNING: From next version (1.4.4+) of the GoXLR App there will be some breaking changes for this plugin. Therefor a updated version of this plugin is required (for SD v0.17.0+). <br />
 All versions before this, you will have problems fetching the list of the profiles.
 
 The plugin therefor supports:
