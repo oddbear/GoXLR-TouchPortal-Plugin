@@ -188,6 +188,18 @@
           "type": "text",
           "desc": "GoXLR: Connected clients count",
           "default": "0"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.multiple.selectedProfile",
+          "type": "text",
+          "desc": "GoXLR: Selected Profile",
+          "default": "unknown"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.multiple.routing.mic.headphones",
+          "type": "text",
+          "desc": "GoXLR: Routing, Microphone / Headphones",
+          "default": "0"
         }
       ],
       "events": []

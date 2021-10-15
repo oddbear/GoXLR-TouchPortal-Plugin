@@ -35,6 +35,18 @@ namespace GoXLR.Plugin.Client
 
             //Set the event handler for GoXLR Clients connected:
             _server.UpdateConnectedClientsEvent = UpdateClientState;
+
+            _server.UpdateSelectedProfileEvent += profileName =>
+            {
+                _client.StateUpdate(PluginId + ".multiple.selectedProfile", profileName ?? "");
+            };
+
+            _server.UpdateRoutingEvent += () =>
+            {
+                var profiles = _server.RoutingStates;
+                var micHeadphones = profiles["Mic|Headphones"];
+                _client.StateUpdate(PluginId + ".multiple.routing.mic.headphones", micHeadphones ? "1" : "0");
+            };
         }
         
         public void Init()
