@@ -114,16 +114,15 @@ namespace GoXLR.Server
 
             socket.OnMessage = (message) =>
             {
-                _logger.LogInformation("Message: {0}", message);
-
                 try
                 {
+                    _logger.LogWarning("Received message: " + message);
+
                     var document = JsonSerializer.Deserialize<JsonDocument>(message);
                     if (document is null)
                         return;
 
                     var root = document.RootElement;
-                    _logger.LogWarning("Received message: " + root);
 
                     var propertyAction = root.GetValue<string>("action");
                     var propertyEvent = root.GetValue<string>("event");
@@ -135,18 +134,25 @@ namespace GoXLR.Server
                         case "goxlrConnectionEvent":
                             ConnectedAndSubscribeToRoutingStates(identifier);
 
-                            _profileFetcherThread.Start(); //TODO: Not robust at all.
+                            _profileFetcherThread.Start(); //TODO: Not robust at all. Fetch each x min if client is connected. But also run at this point.
                             break;
 
-                        case "getSettings" when propertyAction == "com.tchelicon.goxlr.profilechange":
+                        case "getSettings"
+                            when propertyAction == "com.tchelicon.goxlr.profilechange"
+                              && propertyContext != "fetchingProfiles":
+
                             HandleProfileChangeSettingsEvent(identifier, propertyContext);
                             break;
 
-                        case "getSettings" when propertyAction == "com.tchelicon.goxlr.routingtable":
+                        case "getSettings"
+                            when propertyAction == "com.tchelicon.goxlr.routingtable":
+
                             HandleRoutingTableSettingsEvent(identifier, propertyContext);
                             break;
 
-                        case "setState" when propertyAction == "com.tchelicon.goxlr.profilechange":
+                        case "setState"
+                            when propertyAction == "com.tchelicon.goxlr.profilechange":
+
                             var profileState = root
                                 .GetProperty("payload")
                                 .GetProperty("state")
@@ -157,7 +163,9 @@ namespace GoXLR.Server
 
                             break;
 
-                        case "setState" when propertyAction == "com.tchelicon.goxlr.routingtable":
+                        case "setState"
+                            when propertyAction == "com.tchelicon.goxlr.routingtable":
+
                             var routingState = root
                                 .GetProperty("payload")
                                 .GetProperty("state")
@@ -168,7 +176,10 @@ namespace GoXLR.Server
                             UpdateRoutingEvent?.Invoke();
                             break;
 
-                        case "sendToPropertyInspector" when propertyAction == "com.tchelicon.goxlr.profilechange":
+                        case "sendToPropertyInspector"
+                            when propertyAction == "com.tchelicon.goxlr.profilechange"
+                              && propertyContext == "fetchingProfiles":
+
                             //Format:
                             var profiles = root
                                 .GetProperty("payload")
@@ -215,63 +226,48 @@ namespace GoXLR.Server
 
         private void ConnectedAndSubscribeToRoutingStates(ClientIdentifier clientIdentifier)
         {
-            if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))
-            {
-                _logger.LogWarning($"No socket found on: {clientIdentifier}");
-                return;
-            }
-            
+            //Register subscription to all possible routing as this is already known.
             var payload = RoutingStates
                 .Select(context => new { action = "com.tchelicon.goxlr.routingtable", context = context.Key })
                 .ToList();
-
-            //Build:
+            
             var json = JsonSerializer.Serialize(new
             {
                 @event = "goxlrConnectionEvent",
                 payload
             });
 
-            //Send:
-            _logger.LogWarning("Send message: " + json);
-            _ = connection.Send(json);
+            Send(clientIdentifier, json);
         }
 
         private void SubscribeToProfileStates(ClientIdentifier clientIdentifier, string[] profiles)
         {
-            if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))
-            {
-                _logger.LogWarning($"No socket found on: {clientIdentifier}");
-                return;
-            }
-
             foreach (var profile in profiles)
             {
-                //Build:
-                var json = JsonSerializer.Serialize(new
+                //It's required to send a propertyInspectorDidAppear at least once, not sure why.
+
+                var propertyInspectorDidAppear = JsonSerializer.Serialize(new
                 {
                     action = "com.tchelicon.goxlr.profilechange",
                     context = profile,
-                    @event = "willAppear" //TODO: For some reason, this only picks up changes. Not the correct initial state.
+                    @event = "propertyInspectorDidAppear"
                 });
-
-                //Send:
-                _logger.LogWarning("Send message: " + json);
-                _ = connection.Send(json);
+                var willAppear = JsonSerializer.Serialize(new
+                {
+                    action = "com.tchelicon.goxlr.profilechange",
+                    context = profile,
+                    @event = "willAppear"
+                });
+                
+                Send(clientIdentifier, propertyInspectorDidAppear);
+                Send(clientIdentifier, willAppear);
             }
         }
 
         private void UnSubscribeToProfileStates(ClientIdentifier clientIdentifier, string[] profiles)
         {
-            if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))
-            {
-                _logger.LogWarning($"No socket found on: {clientIdentifier}");
-                return;
-            }
-
             foreach (var profile in profiles)
             {
-                //Build:
                 var json = JsonSerializer.Serialize(new
                 {
                     action = "com.tchelicon.goxlr.profilechange",
@@ -279,21 +275,12 @@ namespace GoXLR.Server
                     @event = "willDisappear"
                 });
 
-                //Send:
-                _logger.LogWarning("Send message: " + json);
-                _ = connection.Send(json);
+                Send(clientIdentifier, json);
             }
         }
 
         private void HandleProfileChangeSettingsEvent(ClientIdentifier clientIdentifier, string context)
         {
-            if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))
-            {
-                _logger.LogWarning($"No socket found on: {clientIdentifier}");
-                return;
-            }
-
-            //Build:
             var json = JsonSerializer.Serialize(new
             {
                 action = "com.tchelicon.goxlr.profilechange",
@@ -302,24 +289,15 @@ namespace GoXLR.Server
                 payload = new { settings = new { SelectedProfile = context } }
             });
 
-            //Send:
-            _logger.LogWarning("Send message: " + json);
-            _ = connection.Send(json);
+            Send(clientIdentifier, json);
         }
 
         private void HandleRoutingTableSettingsEvent(ClientIdentifier clientIdentifier, string context)
         {
-            if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))
-            {
-                _logger.LogWarning($"No socket found on: {clientIdentifier}");
-                return;
-            }
-            
             var segments = context.Split('|');
             var routingInput = segments[0];
             var routingOutput = segments[1];
-
-            //Build:
+            
             var json = JsonSerializer.Serialize(new
             {
                 action = "com.tchelicon.goxlr.routingtable",
@@ -335,10 +313,8 @@ namespace GoXLR.Server
                     }
                 }
             });
-
-            //Send:
-            _logger.LogWarning("Send message: " + json);
-            _ = connection.Send(json);
+            
+            Send(clientIdentifier, json);
         }
         
         /// <summary>
@@ -347,23 +323,14 @@ namespace GoXLR.Server
         /// <param name="clientIdentifier"></param>
         private void FetchProfiles(ClientIdentifier clientIdentifier)
         {
-            if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))
-            {
-                _logger.LogWarning($"No socket found on: {clientIdentifier}");
-                return;
-            }
-            
-            //Build:
             var json = JsonSerializer.Serialize(new
             {
                 action = "com.tchelicon.goxlr.profilechange",
                 context = "fetchingProfiles",
                 @event = "propertyInspectorDidAppear"
             });
-
-            //Send:
-            _logger.LogWarning("Send message: " + json);
-            _ = connection.Send(json);
+            
+            Send(clientIdentifier, json);
         }
         
         /// <summary>
@@ -373,13 +340,6 @@ namespace GoXLR.Server
         /// <param name="profileName"></param>
         public void SetProfile(ClientIdentifier clientIdentifier, string profileName)
         {
-            if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))
-            {
-                _logger.LogWarning($"No socket found on: {clientIdentifier}");
-                return;
-            }
-            
-            //Build:
             var json = JsonSerializer.Serialize(new
             {
                 action = "com.tchelicon.goxlr.profilechange",
@@ -392,10 +352,8 @@ namespace GoXLR.Server
                     }
                 }
             });
-
-            //Send:
-            _logger.LogWarning("Send message: " + json);
-            _ = connection.Send(json);
+            
+            Send(clientIdentifier, json);
         }
 
         /// <summary>
@@ -407,13 +365,6 @@ namespace GoXLR.Server
         /// <param name="output"></param>
         public void SetRouting(ClientIdentifier clientIdentifier, string action, string input, string output)
         {
-            if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))
-            {
-                _logger.LogWarning($"No socket found on: {clientIdentifier}");
-                return;
-            }
-            
-            //Build:
             var json = JsonSerializer.Serialize(new
             {
                 action = "com.tchelicon.goxlr.routingtable",
@@ -428,10 +379,20 @@ namespace GoXLR.Server
                     }
                 }
             });
+            
+            Send(clientIdentifier, json);
+        }
 
-            //Send:
-            _logger.LogWarning("Send message: " + json);
-            _ = connection.Send(json);
+        private void Send(ClientIdentifier clientIdentifier, string message)
+        {
+            if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))
+            {
+                _logger.LogWarning($"No socket found on: {clientIdentifier}");
+                return;
+            }
+
+            _logger.LogWarning("Send message: " + message);
+            _ = connection.Send(message);
         }
     }
 }
