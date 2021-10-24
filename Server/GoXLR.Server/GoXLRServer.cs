@@ -42,6 +42,7 @@ namespace GoXLR.Server
                 .ToDictionary(routingKey => routingKey, _ => false);
 
             _profileFetcherThread = new Thread(FetchProfilesThreadSync) { IsBackground = true };
+            _profileFetcherThread.Start();
         }
 
         private static string[] GetRoutingTable()
@@ -74,6 +75,9 @@ namespace GoXLR.Server
                 {
                     foreach (var socket in _sockets)
                     {
+                        if (!socket.Value.IsAvailable)
+                            continue;
+
                         //Get updated profiles:
                         FetchProfiles(socket.Key);
                     }
@@ -132,22 +136,28 @@ namespace GoXLR.Server
                     switch (propertyEvent)
                     {
                         case "goxlrConnectionEvent":
-                            ConnectedAndSubscribeToRoutingStates(identifier);
 
-                            _profileFetcherThread.Start(); //TODO: Not robust at all. Fetch each x min if client is connected. But also run at this point.
+                            ConnectedAndSubscribeToRoutingStates(identifier);
+                            FetchProfiles(identifier);
+
                             break;
 
                         case "getSettings"
-                            when propertyAction == "com.tchelicon.goxlr.profilechange"
-                              && propertyContext != "fetchingProfiles":
+                            when propertyAction == "com.tchelicon.goxlr.profilechange":
+
+                            //We don't care about this "button". This is "global", and there is no state to ask for.
+                            if (propertyContext == "fetchingProfiles")
+                                break;
 
                             HandleProfileChangeSettingsEvent(identifier, propertyContext);
+
                             break;
 
                         case "getSettings"
                             when propertyAction == "com.tchelicon.goxlr.routingtable":
 
                             HandleRoutingTableSettingsEvent(identifier, propertyContext);
+
                             break;
 
                         case "setState"
@@ -174,11 +184,16 @@ namespace GoXLR.Server
                             RoutingStates[propertyContext] = routingState == 0;
 
                             UpdateRoutingEvent?.Invoke();
+
                             break;
 
                         case "sendToPropertyInspector"
-                            when propertyAction == "com.tchelicon.goxlr.profilechange"
-                              && propertyContext == "fetchingProfiles":
+                            when propertyAction == "com.tchelicon.goxlr.profilechange":
+
+                            //We only care about the event where we want to fetch the profiles.
+                            //We can update TP on this, but this could be very noisy.
+                            if (propertyContext != "fetchingProfiles")
+                                break;
 
                             //Format:
                             var profiles = root
@@ -208,7 +223,9 @@ namespace GoXLR.Server
                             break;
 
                         default:
+
                             _logger.LogError($"Unknown event '{propertyEvent}' and action '{propertyAction}' from GoXLR.");
+
                             break;
                     }
                 }
