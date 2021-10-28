@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Sockets;
+using System.Threading;
 using GoXLR.Server;
-using GoXLR.Server.Models;
 using Microsoft.Extensions.Logging;
 using TouchPortalSDK;
 using TouchPortalSDK.Interfaces;
@@ -20,7 +18,6 @@ namespace GoXLR.Plugin.Client
         private readonly ITouchPortalClient _client;
         private readonly GoXLRServer _server;
         private readonly ILogger<GoXLRPlugin> _logger;
-        private readonly IReadOnlyCollection<string> _localAddresses;
 
         public GoXLRPlugin(ITouchPortalClientFactory clientFactory,
             GoXLRServer goXLRServer,
@@ -31,21 +28,34 @@ namespace GoXLR.Plugin.Client
             //Set the event handler for GoXLR connected:
             _server = goXLRServer;
             _logger = logger;
-            _localAddresses = GetLocalAddresses();
 
             //Set the event handler for GoXLR Clients connected:
             _server.UpdateConnectedClientsEvent = UpdateClientState;
 
             _server.UpdateSelectedProfileEvent += profileName =>
             {
-                _client.StateUpdate(PluginId + ".multiple.selectedProfile", profileName ?? "");
+                _client.StateUpdate(PluginId + ".state.selectedProfile", profileName ?? "");
             };
 
             _server.UpdateRoutingEvent += () =>
             {
                 var profiles = _server.RoutingStates;
-                var micHeadphones = profiles["Mic|Headphones"];
-                _client.StateUpdate(PluginId + ".multiple.routing.mic.headphones", micHeadphones ? "1" : "0");
+                if (profiles is null)
+                    return;
+                
+                foreach (var profile in profiles)
+                {
+                    var key = profile.Key;
+                    if (string.IsNullOrEmpty(key) || key.Length < 1)
+                        continue;
+
+                    //TODO: Do not update those who has not changed:
+                    var parts = key.Split("|");
+                    parts[0] = char.ToLowerInvariant(parts[0][0]) + parts[0].Substring(1).Replace(" ", "");
+                    parts[1] = char.ToLowerInvariant(parts[1][0]) + parts[1].Substring(1).Replace(" ", "");
+
+                    _client.StateUpdate(PluginId + ".state.routing." + parts[0] + "." + parts[1], profile.Value ? "On" : "Off");
+                }
             };
         }
         
@@ -77,18 +87,14 @@ namespace GoXLR.Plugin.Client
                     return;
 
                 //Profiles client selected, fetch profiles for client:
-                if (message.ActionId.EndsWith(".multiple.profiles.action.change") &&
-                    message.ListId.EndsWith(".multiple.profiles.action.change.data.clients"))
+                if (message.ActionId.EndsWith(".profiles.action.change") &&
+                    message.ListId.EndsWith(".profiles.action.change.data.clients"))
                 {
-                    var client = GetClients(message.Value);
-                    if (client is null)
+                    var profiles = _server.ClientData?.Profiles;
+                    if (profiles is null)
                         return;
-
-                    var clientData = GetClients(message.Value);
-                    if (clientData is null)
-                        return;
-
-                    _client.ChoiceUpdate(PluginId + ".multiple.profiles.action.change.data.profiles", clientData.Profiles, message.InstanceId);
+                    
+                    _client.ChoiceUpdate(PluginId + ".profiles.action.change.data.profiles", profiles, message.InstanceId);
                 }
             }
             catch (Exception e)
@@ -156,27 +162,14 @@ namespace GoXLR.Plugin.Client
         {
             try
             {
-                //Since ports are quite random, we only use the ip when connecting to the plugin.
-                //There is only possible (without faking it) to have one client per ip.
-                //Therefor this is a unique identifier that will hold between restarts.
-                var clients = _server.ClientData
-                    .Select(clientData => clientData.ClientIdentifier)
-                    .Select(identifier => identifier.ClientIpAddress)
-                    //Distinct since GoXLR right now does not close the old connection on reconnect:
-                    .Distinct()
-                    .ToArray();
+                var clientData = _server.ClientData;
+                if (clientData is null)
+                    return;
 
-                var clientChoices = new List<string> { "default" };
-                clientChoices.AddRange(clients);
+                var client = clientData.ClientIdentifier.ClientIpAddress;
 
                 //Update states:
-                _client.StateUpdate(PluginId + ".single.clients.state.connected", clients.FirstOrDefault() ?? "none");
-                _client.StateUpdate(PluginId + ".multiple.clients.states.count", clients.Length.ToString());
-
-                //Update choices:
-                _client.ChoiceUpdate(PluginId + ".multiple.routingtable.action.change.data.clients", clientChoices.ToArray());
-
-                _client.ChoiceUpdate(PluginId + ".multiple.profiles.action.change.data.clients", clientChoices.ToArray());
+                _client.StateUpdate(PluginId + ".state.connectedClient", client);
             }
             catch (Exception e)
             {
@@ -195,16 +188,12 @@ namespace GoXLR.Plugin.Client
                 .ToDictionary(kv => kv.Id, kv => kv.Value);
 
             dict.TryGetValue(name + ".clients", out var clientIp);
-
-            var client = GetClients(clientIp);
-            if (client is null)
-                return;
-
+            
             var input = dict[name + ".inputs"];
             var output = dict[name + ".outputs"];
             var action = dict[name + ".actions"];
 
-            _server.SetRouting(client.ClientIdentifier, action, input, output);
+            _server.SetRouting(action, input, output);
         }
 
         /// <summary>
@@ -216,67 +205,10 @@ namespace GoXLR.Plugin.Client
         {
             var dict = datalist
                 .ToDictionary(kv => kv.Id, kv => kv.Value);
-
-            dict.TryGetValue(name + ".clients", out var clientIp);
-
-            var client = GetClients(clientIp);
-            if (client is null)
-                return;
-
+            
             var profile = dict[name + ".profiles"];
 
-            _server.SetProfile(client.ClientIdentifier, profile);
-        }
-
-        /// <summary>
-        /// Get client data from a connected client name/ip.
-        /// </summary>
-        /// <param name="clientIp">Client value/ip from the TouchPortal dropdown.</param>
-        /// <returns></returns>
-        private ClientData GetClients(string clientIp)
-        {
-            var clients = _server.ClientData;
-
-            //No exact IP is set:
-            if (string.IsNullOrWhiteSpace(clientIp) || clientIp == "default")
-            {
-                //Try to use a local IP as client first:
-                return clients.FirstOrDefault(clientData => _localAddresses.Contains(clientData.ClientIdentifier.ClientIpAddress))
-                       //Or just give me the first one:
-                       ?? clients.FirstOrDefault();
-            }
-
-            //Try to find a exact match (last is the most recent connection):
-            return clients
-                .LastOrDefault(clientData => clientData.ClientIdentifier.ClientIpAddress == clientIp);
-        }
-
-        /// <summary>
-        /// Gets the ip addresses of current computer.
-        /// </summary>
-        /// <returns></returns>
-        private IReadOnlyCollection<string> GetLocalAddresses()
-        {
-            var addresses = new List<string> { "127.0.0.1" };
-
-            try
-            {
-                var hostName = Dns.GetHostName();
-                addresses.Add(hostName);
-
-                var host = Dns.GetHostEntry(hostName);
-                var ipAddresses = host.AddressList
-                    .Where(ip => ip.AddressFamily == AddressFamily.InterNetwork)
-                    .Select(ip => ip.ToString());
-
-                addresses.AddRange(ipAddresses);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e.ToString());
-            }
-
-            return addresses.AsReadOnly();
+            _server.SetProfile(profile);
         }
     }
 }

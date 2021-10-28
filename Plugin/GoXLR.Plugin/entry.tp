@@ -10,112 +10,22 @@
   "plugin_start_cmd": "\"%TP_PLUGIN_FOLDER%GoXLR.Plugin\\GoXLR.Plugin.exe\"",
   "categories": [
     {
-      "id": "oddbear.touchportal.goxlr.single",
-      "name": "GoXLR Single",
-      "imagepath": "%TP_PLUGIN_FOLDER%GoXLR.Plugin\\logo.png",
-      "actions": [
-        {
-          "id": "oddbear.touchportal.goxlr.single.routingtable.action.change",
-          "prefix": "GoXLR:",
-          "name": "GoXLR Routing Table Change",
-          "type": "communicate",
-          "tryInline": true,
-          "format": "Input {$oddbear.touchportal.goxlr.single.routingtable.action.change.data.inputs$} Output {$oddbear.touchportal.goxlr.single.routingtable.action.change.data.outputs$} Action {$oddbear.touchportal.goxlr.single.routingtable.action.change.data.actions$}",
-          "description": "The profile to select on the GoXLR device.",
-          "data": [
-            {
-              "id": "oddbear.touchportal.goxlr.single.routingtable.action.change.data.inputs",
-              "type": "choice",
-              "label": "Input",
-              "default": "Mic",
-              "valueChoices": [
-                "Mic",
-                "Chat",
-                "Music",
-                "Game",
-                "Console",
-                "Line In",
-                "System",
-                "Samples"
-              ]
-            },
-            {
-              "id": "oddbear.touchportal.goxlr.single.routingtable.action.change.data.outputs",
-              "type": "choice",
-              "label": "Output",
-              "default": "Headphones",
-              "valueChoices": [
-                "Headphones",
-                "Broadcast Mix",
-                "Line Out",
-                "Chat Mic",
-                "Sampler"
-              ]
-            },
-            {
-              "id": "oddbear.touchportal.goxlr.single.routingtable.action.change.data.actions",
-              "type": "choice",
-              "label": "Action",
-              "default": "Turn On",
-              "valueChoices": [
-                "Turn On",
-                "Turn Off",
-                "Toggle"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "oddbear.touchportal.goxlr.single.profiles.action.change",
-          "prefix": "GoXLR:",
-          "name": "GoXLR Profile Select",
-          "format": "Select Profile: {$oddbear.touchportal.goxlr.single.profiles.action.change.data.profiles$}",
-          "description": "The profile to select on the GoXLR device.",
-          "type": "communicate",
-          "tryInline": true,
-          "data": [
-            {
-              "id": "oddbear.touchportal.goxlr.single.profiles.action.change.data.profiles",
-              "type": "text",
-              "label": "Profile",
-              "default": ""
-            }
-          ]
-        }
-      ],
-      "states": [
-        {
-          "id": "oddbear.touchportal.goxlr.single.clients.state.connected",
-          "type": "text",
-          "desc": "GoXLR: Connected client name / ip",
-          "default": "none"
-        }
-      ],
-      "events": []
-    },
-    {
-      "id": "oddbear.touchportal.goxlr.multiple",
+      "id": "oddbear.touchportal.goxlr",
       "name": "GoXLR Multiple",
       "imagepath": "%TP_PLUGIN_FOLDER%GoXLR.Plugin\\logo.png",
       "actions": [
         {
-          "id": "oddbear.touchportal.goxlr.multiple.routingtable.action.change",
+          "id": "oddbear.touchportal.goxlr.routingtable.action.change",
           "prefix": "GoXLR:",
           "name": "GoXLR Routing Table Change",
           "type": "communicate",
           "tryInline": true,
-          "format": "Client {$oddbear.touchportal.goxlr.multiple.routingtable.action.change.data.clients$} Input {$oddbear.touchportal.goxlr.multiple.routingtable.action.change.data.inputs$} Output {$oddbear.touchportal.goxlr.multiple.routingtable.action.change.data.outputs$} Action {$oddbear.touchportal.goxlr.multiple.routingtable.action.change.data.actions$}",
+          "format":
+            "Input {$oddbear.touchportal.goxlr.routingtable.action.change.data.inputs$} Output {$oddbear.touchportal.goxlr.routingtable.action.change.data.outputs$} Action {$oddbear.touchportal.goxlr.routingtable.action.change.data.actions$}",
           "description": "The routing table change on the GoXLR device.",
           "data": [
             {
-              "id": "oddbear.touchportal.goxlr.multiple.routingtable.action.change.data.clients",
-              "type": "choice",
-              "label": "Client",
-              "default": "default",
-              "valueChoices": [ "default" ]
-            },
-            {
-              "id": "oddbear.touchportal.goxlr.multiple.routingtable.action.change.data.inputs",
+              "id": "oddbear.touchportal.goxlr.routingtable.action.change.data.inputs",
               "type": "choice",
               "label": "Input",
               "default": "Mic",
@@ -131,7 +41,7 @@
               ]
             },
             {
-              "id": "oddbear.touchportal.goxlr.multiple.routingtable.action.change.data.outputs",
+              "id": "oddbear.touchportal.goxlr.routingtable.action.change.data.outputs",
               "type": "choice",
               "label": "Output",
               "default": "Headphones",
@@ -144,10 +54,10 @@
               ]
             },
             {
-              "id": "oddbear.touchportal.goxlr.multiple.routingtable.action.change.data.actions",
+              "id": "oddbear.touchportal.goxlr.routingtable.action.change.data.actions",
               "type": "choice",
               "label": "Action",
-              "default": "Turn On",
+              "default": "Toggle",
               "valueChoices": [
                 "Turn On",
                 "Turn Off",
@@ -157,23 +67,17 @@
           ]
         },
         {
-          "id": "oddbear.touchportal.goxlr.multiple.profiles.action.change",
+          "id": "oddbear.touchportal.goxlr.profiles.action.change",
           "prefix": "GoXLR:",
           "name": "GoXLR Profile Select",
           "type": "communicate",
           "tryInline": true,
-          "format": "Client {$oddbear.touchportal.goxlr.multiple.profiles.action.change.data.clients$} profile {$oddbear.touchportal.goxlr.multiple.profiles.action.change.data.profiles$}",
+          "format":
+            "Profile {$oddbear.touchportal.goxlr.profiles.action.change.data.profiles$}",
           "description": "The profile to select on the GoXLR device.",
           "data": [
             {
-              "id": "oddbear.touchportal.goxlr.multiple.profiles.action.change.data.clients",
-              "type": "choice",
-              "label": "Client",
-              "default": "default",
-              "valueChoices": [ "default" ]
-            },
-            {
-              "id": "oddbear.touchportal.goxlr.multiple.profiles.action.change.data.profiles",
+              "id": "oddbear.touchportal.goxlr.profiles.action.change.data.profiles",
               "type": "choice",
               "label": "Profile",
               "default": "",
@@ -184,22 +88,256 @@
       ],
       "states": [
         {
-          "id": "oddbear.touchportal.goxlr.multiple.clients.states.count",
+          "id": "oddbear.touchportal.goxlr.state.connectedClient",
           "type": "text",
-          "desc": "GoXLR: Connected clients count",
-          "default": "0"
+          "desc": "GoXLR: Connected client name / ip",
+          "default": "On",
+          "valueChoices": [
+            "On",
+            "Off"
+          ]
         },
         {
-          "id": "oddbear.touchportal.goxlr.multiple.selectedProfile",
+          "id": "oddbear.touchportal.goxlr.state.selectedProfile",
           "type": "text",
           "desc": "GoXLR: Selected Profile",
           "default": "unknown"
         },
+
         {
-          "id": "oddbear.touchportal.goxlr.multiple.routing.mic.headphones",
+          "id": "oddbear.touchportal.goxlr.state.routing.mic.headphones",
           "type": "text",
           "desc": "GoXLR: Routing, Microphone / Headphones",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.mic.broadcastMix",
+          "type": "text",
+          "desc": "GoXLR: Routing, Microphone / Broadcast Mix",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.mic.lineOut",
+          "type": "text",
+          "desc": "GoXLR: Routing, Microphone / Line Out",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.mic.chatMic",
+          "type": "text",
+          "desc": "GoXLR: Routing, Microphone / Chat Mic",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.mic.sampler",
+          "type": "text",
+          "desc": "GoXLR: Routing, Microphone / Sampler",
           "default": "0"
+        },
+
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.chat.headphones",
+          "type": "text",
+          "desc": "GoXLR: Routing, Chat / Headphones",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.chat.broadcastMix",
+          "type": "text",
+          "desc": "GoXLR: Routing, Chat / Broadcast Mix",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.chat.lineOut",
+          "type": "text",
+          "desc": "GoXLR: Routing, Chat / Line Out",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.chat.sampler",
+          "type": "text",
+          "desc": "GoXLR: Routing, Chat / Sampler",
+          "default": "0"
+        },
+
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.music.headphones",
+          "type": "text",
+          "desc": "GoXLR: Routing, Music / Headphones",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.music.broadcastMix",
+          "type": "text",
+          "desc": "GoXLR: Routing, Music / Broadcast Mix",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.music.lineOut",
+          "type": "text",
+          "desc": "GoXLR: Routing, Music / Line Out",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.music.chatMic",
+          "type": "text",
+          "desc": "GoXLR: Routing, Music / Chat Mic",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.music.sampler",
+          "type": "text",
+          "desc": "GoXLR: Routing, Music / Sampler",
+          "default": "0"
+        },
+
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.game.headphones",
+          "type": "text",
+          "desc": "GoXLR: Routing, Game / Headphones",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.game.broadcastMix",
+          "type": "text",
+          "desc": "GoXLR: Routing, Game / Broadcast Mix",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.game.lineOut",
+          "type": "text",
+          "desc": "GoXLR: Routing, Game / Line Out",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.game.chatMic",
+          "type": "text",
+          "desc": "GoXLR: Routing, Game / Chat Mic",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.game.sampler",
+          "type": "text",
+          "desc": "GoXLR: Routing, Game / Sampler",
+          "default": "0"
+        },
+
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.console.headphones",
+          "type": "text",
+          "desc": "GoXLR: Routing, Console / Headphones",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.console.broadcastMix",
+          "type": "text",
+          "desc": "GoXLR: Routing, Console / Broadcast Mix",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.console.lineOut",
+          "type": "text",
+          "desc": "GoXLR: Routing, Console / Line Out",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.console.chatMic",
+          "type": "text",
+          "desc": "GoXLR: Routing, Console / Chat Mic",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.console.sampler",
+          "type": "text",
+          "desc": "GoXLR: Routing, Console / Sampler",
+          "default": "0"
+        },
+
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.lineIn.headphones",
+          "type": "text",
+          "desc": "GoXLR: Routing, Line In / Headphones",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.lineIn.broadcastMix",
+          "type": "text",
+          "desc": "GoXLR: Routing, Line In / Broadcast Mix",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.lineIn.lineOut",
+          "type": "text",
+          "desc": "GoXLR: Routing, Line In / Line Out",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.lineIn.chatMic",
+          "type": "text",
+          "desc": "GoXLR: Routing, Line In / Chat Mic",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.lineIn.sampler",
+          "type": "text",
+          "desc": "GoXLR: Routing, Line In / Sampler",
+          "default": "0"
+        },
+
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.system.headphones",
+          "type": "text",
+          "desc": "GoXLR: Routing, System / Headphones",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.system.broadcastMix",
+          "type": "text",
+          "desc": "GoXLR: Routing, System / Broadcast Mix",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.system.lineOut",
+          "type": "text",
+          "desc": "GoXLR: Routing, System / Line Out",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.system.chatMic",
+          "type": "text",
+          "desc": "GoXLR: Routing, System / Chat Mic",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.system.sampler",
+          "type": "text",
+          "desc": "GoXLR: Routing, System / Sampler",
+          "default": "0"
+        },
+
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.samples.headphones",
+          "type": "text",
+          "desc": "GoXLR: Routing, Samples / Headphones",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.samples.broadcastMix",
+          "type": "text",
+          "desc": "GoXLR: Routing, Samples / Broadcast Mix",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.samples.lineOut",
+          "type": "text",
+          "desc": "GoXLR: Routing, Samples / Line Out",
+          "default": "Off"
+        },
+        {
+          "id": "oddbear.touchportal.goxlr.state.routing.samples.chatMic",
+          "type": "text",
+          "desc": "GoXLR: Routing, Samples / Chat Mic",
+          "default": "Off"
         }
       ],
       "events": []

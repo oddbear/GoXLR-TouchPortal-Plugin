@@ -18,9 +18,10 @@ namespace GoXLR.Server
         private readonly ILogger _logger;
         
         private readonly WebSocketServerSettings _settings;
-        private readonly Dictionary<ClientIdentifier, IWebSocketConnection> _sockets = new();
         
-        public List<ClientData> ClientData { get; } = new();
+        private IWebSocketConnection _socket;
+
+        public ClientData ClientData { get; private set; }
 
         public Action UpdateConnectedClientsEvent { get; set; }
 
@@ -29,9 +30,7 @@ namespace GoXLR.Server
         public Action UpdateRoutingEvent { get; set; }
 
         public Dictionary<string, bool> RoutingStates { get; }
-
-        private readonly Thread _profileFetcherThread;
-
+        
         public GoXLRServer(ILogger<GoXLRServer> logger,
             IOptions<WebSocketServerSettings> options)
         {
@@ -41,8 +40,8 @@ namespace GoXLR.Server
             RoutingStates = GetRoutingTable()
                 .ToDictionary(routingKey => routingKey, _ => false);
 
-            _profileFetcherThread = new Thread(FetchProfilesThreadSync) { IsBackground = true };
-            _profileFetcherThread.Start();
+            var profileFetcherThread = new Thread(FetchProfilesThreadSync) { IsBackground = true };
+            profileFetcherThread.Start();
         }
 
         private static string[] GetRoutingTable()
@@ -73,14 +72,11 @@ namespace GoXLR.Server
             {
                 try
                 {
-                    foreach (var socket in _sockets)
-                    {
-                        if (!socket.Value.IsAvailable)
-                            continue;
+                    if (_socket?.IsAvailable != true)
+                        continue;
 
-                        //Get updated profiles:
-                        FetchProfiles(socket.Key);
-                    }
+                    //Get updated profiles:
+                    FetchProfiles();
                 }
                 catch (Exception exception)
                 {
@@ -97,19 +93,19 @@ namespace GoXLR.Server
         /// <param name="socket"></param>
         private void OnClientConnecting(IWebSocketConnection socket)
         {
+            _socket = socket;
+
             var connectionInfo = socket.ConnectionInfo;
             var identifier = new ClientIdentifier(connectionInfo.ClientIpAddress, connectionInfo.ClientPort);
 
             socket.OnOpen = () =>
             {
-                _sockets.Add(identifier, socket);
                 _logger.LogInformation($"Connection opened {socket.ConnectionInfo.ClientIpAddress}.");
             };
 
             socket.OnClose = () =>
             {
-                _sockets.Remove(identifier);
-                ClientData.RemoveAll(clientData => clientData.ClientIdentifier == identifier);
+                ClientData = null;
 
                 _logger.LogInformation($"Connection closed {socket.ConnectionInfo.ClientIpAddress}.");
                 
@@ -137,8 +133,8 @@ namespace GoXLR.Server
                     {
                         case "goxlrConnectionEvent":
 
-                            ConnectedAndSubscribeToRoutingStates(identifier);
-                            FetchProfiles(identifier);
+                            ConnectedAndSubscribeToRoutingStates();
+                            FetchProfiles();
 
                             break;
 
@@ -149,14 +145,14 @@ namespace GoXLR.Server
                             if (propertyContext == "fetchingProfiles")
                                 break;
 
-                            HandleProfileChangeSettingsEvent(identifier, propertyContext);
+                            HandleProfileChangeSettingsEvent(propertyContext);
 
                             break;
 
                         case "getSettings"
                             when propertyAction == "com.tchelicon.goxlr.routingtable":
 
-                            HandleRoutingTableSettingsEvent(identifier, propertyContext);
+                            HandleRoutingTableSettingsEvent(propertyContext);
 
                             break;
 
@@ -204,21 +200,22 @@ namespace GoXLR.Server
                                 .ToArray();
 
                             //TODO: Register new profiles
-                            var oldData = ClientData
-                                .FirstOrDefault(data => data.ClientIdentifier == identifier) ?? new ClientData(identifier, Array.Empty<string>());
+                            var oldData = ClientData ?? new ClientData(identifier, Array.Empty<string>());
                             
                             //Set client data:
                             var clientData = new ClientData(identifier, profiles);
-                            ClientData.Add(clientData);
+                            ClientData = clientData;
 
                             //Update client list, with data:
                             UpdateConnectedClientsEvent?.Invoke();
 
+                            //TODO: If it has changed... report... instead of ignore if not "fetchingProfiles".
+
                             var profilesToRegister = profiles.Except(oldData.Profiles).ToArray();
-                            SubscribeToProfileStates(identifier, profilesToRegister);
+                            SubscribeToProfileStates(profilesToRegister);
 
                             var profilesToUnRegister = oldData.Profiles.Except(profiles).ToArray();
-                            UnSubscribeToProfileStates(identifier, profilesToUnRegister);
+                            UnSubscribeToProfileStates(profilesToUnRegister);
 
                             break;
 
@@ -241,7 +238,7 @@ namespace GoXLR.Server
             socket.OnError = (exception) => _logger.LogError(exception.ToString());
         }
 
-        private void ConnectedAndSubscribeToRoutingStates(ClientIdentifier clientIdentifier)
+        private void ConnectedAndSubscribeToRoutingStates()
         {
             //Register subscription to all possible routing as this is already known.
             var payload = RoutingStates
@@ -254,10 +251,10 @@ namespace GoXLR.Server
                 payload
             });
 
-            Send(clientIdentifier, json);
+            Send(json);
         }
 
-        private void SubscribeToProfileStates(ClientIdentifier clientIdentifier, string[] profiles)
+        private void SubscribeToProfileStates(string[] profiles)
         {
             foreach (var profile in profiles)
             {
@@ -276,12 +273,12 @@ namespace GoXLR.Server
                     @event = "willAppear"
                 });
                 
-                Send(clientIdentifier, propertyInspectorDidAppear);
-                Send(clientIdentifier, willAppear);
+                Send(propertyInspectorDidAppear);
+                Send(willAppear);
             }
         }
 
-        private void UnSubscribeToProfileStates(ClientIdentifier clientIdentifier, string[] profiles)
+        private void UnSubscribeToProfileStates(string[] profiles)
         {
             foreach (var profile in profiles)
             {
@@ -292,11 +289,11 @@ namespace GoXLR.Server
                     @event = "willDisappear"
                 });
 
-                Send(clientIdentifier, json);
+                Send(json);
             }
         }
 
-        private void HandleProfileChangeSettingsEvent(ClientIdentifier clientIdentifier, string context)
+        private void HandleProfileChangeSettingsEvent(string context)
         {
             var json = JsonSerializer.Serialize(new
             {
@@ -306,10 +303,10 @@ namespace GoXLR.Server
                 payload = new { settings = new { SelectedProfile = context } }
             });
 
-            Send(clientIdentifier, json);
+            Send(json);
         }
 
-        private void HandleRoutingTableSettingsEvent(ClientIdentifier clientIdentifier, string context)
+        private void HandleRoutingTableSettingsEvent(string context)
         {
             var segments = context.Split('|');
             var routingInput = segments[0];
@@ -331,14 +328,14 @@ namespace GoXLR.Server
                 }
             });
             
-            Send(clientIdentifier, json);
+            Send(json);
         }
         
         /// <summary>
         /// Fetching profiles from the selected GoXLR App.
         /// </summary>
         /// <param name="clientIdentifier"></param>
-        private void FetchProfiles(ClientIdentifier clientIdentifier)
+        private void FetchProfiles()
         {
             var json = JsonSerializer.Serialize(new
             {
@@ -347,7 +344,7 @@ namespace GoXLR.Server
                 @event = "propertyInspectorDidAppear"
             });
             
-            Send(clientIdentifier, json);
+            Send(json);
         }
         
         /// <summary>
@@ -355,7 +352,7 @@ namespace GoXLR.Server
         /// </summary>
         /// <param name="clientIdentifier"></param>
         /// <param name="profileName"></param>
-        public void SetProfile(ClientIdentifier clientIdentifier, string profileName)
+        public void SetProfile(string profileName)
         {
             var json = JsonSerializer.Serialize(new
             {
@@ -370,7 +367,7 @@ namespace GoXLR.Server
                 }
             });
             
-            Send(clientIdentifier, json);
+            Send(json);
         }
 
         /// <summary>
@@ -380,7 +377,7 @@ namespace GoXLR.Server
         /// <param name="action"></param>
         /// <param name="input"></param>
         /// <param name="output"></param>
-        public void SetRouting(ClientIdentifier clientIdentifier, string action, string input, string output)
+        public void SetRouting(string action, string input, string output)
         {
             var json = JsonSerializer.Serialize(new
             {
@@ -397,19 +394,13 @@ namespace GoXLR.Server
                 }
             });
             
-            Send(clientIdentifier, json);
+            Send(json);
         }
 
-        private void Send(ClientIdentifier clientIdentifier, string message)
+        private void Send(string message)
         {
-            if (clientIdentifier is null || !_sockets.TryGetValue(clientIdentifier, out var connection))
-            {
-                _logger.LogWarning($"No socket found on: {clientIdentifier}");
-                return;
-            }
-
             _logger.LogWarning("Send message: " + message);
-            _ = connection.Send(message);
+            _ = _socket?.Send(message);
         }
     }
 }
