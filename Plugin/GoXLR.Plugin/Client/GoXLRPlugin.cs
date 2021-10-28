@@ -18,6 +18,8 @@ namespace GoXLR.Plugin.Client
         private readonly ITouchPortalClient _client;
         private readonly GoXLRServer _server;
         private readonly ILogger<GoXLRPlugin> _logger;
+        //The issue with to many updates performance is towards TP, so this is where the filter should be.
+        private readonly Dictionary<string, bool> _stateTracker = new();
 
         public GoXLRPlugin(ITouchPortalClientFactory clientFactory,
             GoXLRServer goXLRServer,
@@ -39,22 +41,27 @@ namespace GoXLR.Plugin.Client
 
             _server.UpdateRoutingEvent += () =>
             {
-                var profiles = _server.RoutingStates;
-                if (profiles is null)
+                var routingStates = _server.RoutingStates;
+                if (routingStates is null)
                     return;
                 
-                foreach (var profile in profiles)
+                foreach (var state in routingStates)
                 {
-                    var key = profile.Key;
+                    var key = state.Key;
                     if (string.IsNullOrEmpty(key) || key.Length < 1)
                         continue;
 
-                    //TODO: Do not update those who has not changed:
                     var parts = key.Split("|");
                     parts[0] = char.ToLowerInvariant(parts[0][0]) + parts[0].Substring(1).Replace(" ", "");
                     parts[1] = char.ToLowerInvariant(parts[1][0]) + parts[1].Substring(1).Replace(" ", "");
 
-                    _client.StateUpdate(PluginId + ".state.routing." + parts[0] + "." + parts[1], profile.Value ? "On" : "Off");
+                    //TODO: Fix broken states, all in Samples column is broken now:
+                    var stateId = PluginId + ".state.routing." + parts[0] + "." + parts[1];
+                    if (_stateTracker.ContainsKey(stateId) && _stateTracker[stateId] == state.Value)
+                        continue;
+
+                    _stateTracker[stateId] = state.Value;
+                    _client.StateUpdate(stateId, state.Value ? "On" : "Off");
                 }
             };
         }
