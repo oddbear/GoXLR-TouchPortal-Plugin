@@ -55,7 +55,7 @@ namespace GoXLR.TouchPortal.Plugin.Client
                     parts[1] = char.ToLowerInvariant(parts[1][0]) + parts[1].Substring(1).Replace(" ", "");
 
                     //TODO: Fix broken states, all in Samples column is broken now:
-                    var stateId = PluginId + ".state.routing." + parts[0] + "." + parts[1];
+                    var stateId = PluginId + ".state.routing." + parts[0] + "|" + parts[1];
                     if (_stateTracker.ContainsKey(stateId) && _stateTracker[stateId] == state.Value)
                         continue;
 
