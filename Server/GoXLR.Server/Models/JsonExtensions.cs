@@ -16,9 +16,9 @@ namespace GoXLR.Server.Models
                 .ToArray();
         }
 
-        public static int GetStateFromPayload(this JsonElement jsonElement)
+        public static State GetStateFromPayload(this JsonElement jsonElement)
         {
-            return jsonElement
+            return (State)jsonElement
                 .GetProperty("payload")
                 .GetProperty("state")
                 .GetInt32();

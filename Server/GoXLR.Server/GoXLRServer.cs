@@ -28,7 +28,7 @@ namespace GoXLR.Server
 
         public Action<string> UpdateSelectedProfileEvent { get; set; }
 
-        public Action<string, int> UpdateRoutingEvent { get; set; }
+        public Action<string, State> UpdateRoutingEvent { get; set; }
 
         public const char RoutingSeparator = '|'; //TODO: Create better logic?
 
@@ -75,7 +75,7 @@ namespace GoXLR.Server
                         continue;
 
                     //Get updated profiles:
-                    FetchProfiles();
+                    RequestProfiles();
                 }
                 catch (Exception exception)
                 {
@@ -133,7 +133,7 @@ namespace GoXLR.Server
                         case "goxlrConnectionEvent":
 
                             ConnectedAndSubscribeToRoutingStates();
-                            FetchProfiles();
+                            RequestProfiles();
 
                             break;
 
@@ -329,8 +329,7 @@ namespace GoXLR.Server
         /// <summary>
         /// Fetching profiles from the selected GoXLR App.
         /// </summary>
-        /// <param name="clientIdentifier"></param>
-        private void FetchProfiles()
+        private void RequestProfiles()
         {
             var json = JsonSerializer.Serialize(new
             {
@@ -345,7 +344,6 @@ namespace GoXLR.Server
         /// <summary>
         /// Sets a profile in the selected GoXLR App.
         /// </summary>
-        /// <param name="clientIdentifier"></param>
         /// <param name="profileName"></param>
         public void SetProfile(string profileName)
         {
@@ -368,7 +366,6 @@ namespace GoXLR.Server
         /// <summary>
         /// Sets a routing in the selected GoXLR App.
         /// </summary>
-        /// <param name="clientIdentifier"></param>
         /// <param name="action"></param>
         /// <param name="input"></param>
         /// <param name="output"></param>

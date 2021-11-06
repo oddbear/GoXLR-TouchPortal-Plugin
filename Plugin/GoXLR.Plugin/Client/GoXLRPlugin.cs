@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using GoXLR.Server;
+using GoXLR.Server.Models;
 using Microsoft.Extensions.Logging;
 using TouchPortalSDK;
 using TouchPortalSDK.Interfaces;
@@ -18,7 +19,7 @@ namespace GoXLR.TouchPortal.Plugin.Client
         private readonly GoXLRServer _server;
         private readonly ILogger<GoXLRPlugin> _logger;
         //The issue with to many updates performance is towards TP, so this is where the filter should be.
-        private readonly Dictionary<string, int> _stateTracker = new();
+        private readonly Dictionary<string, State> _stateTracker = new();
 
         public GoXLRPlugin(ITouchPortalClientFactory clientFactory,
             GoXLRServer goXLRServer,
@@ -53,7 +54,7 @@ namespace GoXLR.TouchPortal.Plugin.Client
                     return;
 
                 _stateTracker[stateId] = state;
-                _client.StateUpdate(stateId, state == 0 ? "On" : "Off");
+                _client.StateUpdate(stateId, state.ToString());
             };
         }
         
