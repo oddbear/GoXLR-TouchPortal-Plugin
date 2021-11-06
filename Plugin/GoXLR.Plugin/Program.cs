@@ -1,14 +1,14 @@
 using System;
 using System.IO;
-using GoXLR.Plugin.Client;
 using GoXLR.Server;
 using GoXLR.Server.Models;
+using GoXLR.TouchPortal.Plugin.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TouchPortalSDK.Configuration;
 
-namespace GoXLR.Plugin
+namespace GoXLR.TouchPortal.Plugin
 {
     public class Program
     {

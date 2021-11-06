@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using GoXLR.Server;
 using Microsoft.Extensions.Logging;
 using TouchPortalSDK;
@@ -9,7 +8,7 @@ using TouchPortalSDK.Interfaces;
 using TouchPortalSDK.Messages.Events;
 using TouchPortalSDK.Messages.Models;
 
-namespace GoXLR.Plugin.Client
+namespace GoXLR.TouchPortal.Plugin.Client
 {
     public class GoXLRPlugin : ITouchPortalEventHandler
     {

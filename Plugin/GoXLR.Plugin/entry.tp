@@ -11,7 +11,7 @@
   "categories": [
     {
       "id": "oddbear.touchportal.goxlr",
-      "name": "GoXLR Multiple",
+      "name": "GoXLR",
       "imagepath": "%TP_PLUGIN_FOLDER%GoXLR.Plugin\\logo.png",
       "actions": [
         {

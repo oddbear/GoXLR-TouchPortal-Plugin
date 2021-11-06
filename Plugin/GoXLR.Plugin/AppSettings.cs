@@ -1,6 +1,6 @@
 ﻿using GoXLR.Server.Models;
 
-namespace GoXLR.Plugin
+namespace GoXLR.TouchPortal.Plugin
 {
     public class AppSettings
     {

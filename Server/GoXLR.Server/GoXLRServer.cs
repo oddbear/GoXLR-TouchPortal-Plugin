@@ -177,6 +177,12 @@ namespace GoXLR.Server
                                 .GetProperty("state")
                                 .GetInt32();
 
+                            //TODO: Why is not the Samples column working?
+                            if (propertyContext.Contains("Samples"))
+                            {
+                                Console.WriteLine("Yay");
+                            }
+
                             RoutingStates[propertyContext] = routingState == 0;
 
                             UpdateRoutingEvent?.Invoke();
