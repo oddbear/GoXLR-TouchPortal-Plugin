@@ -18,7 +18,7 @@ namespace GoXLR.TouchPortal.Plugin.Client
         private readonly GoXLRServer _server;
         private readonly ILogger<GoXLRPlugin> _logger;
         //The issue with to many updates performance is towards TP, so this is where the filter should be.
-        private readonly Dictionary<string, bool> _stateTracker = new();
+        private readonly Dictionary<string, int> _stateTracker = new();
 
         public GoXLRPlugin(ITouchPortalClientFactory clientFactory,
             GoXLRServer goXLRServer,
@@ -38,30 +38,22 @@ namespace GoXLR.TouchPortal.Plugin.Client
                 _client.StateUpdate(PluginId + ".state.selectedProfile", profileName ?? "");
             };
 
-            _server.UpdateRoutingEvent += () =>
+            _server.UpdateRoutingEvent += (routeId, state) =>
             {
-                var routingStates = _server.RoutingStates;
-                if (routingStates is null)
+                if (string.IsNullOrWhiteSpace(routeId))
                     return;
-                
-                foreach (var state in routingStates)
-                {
-                    var key = state.Key;
-                    if (string.IsNullOrEmpty(key) || key.Length < 1)
-                        continue;
 
-                    var parts = key.Split("|");
-                    parts[0] = char.ToLowerInvariant(parts[0][0]) + parts[0].Substring(1).Replace(" ", "");
-                    parts[1] = char.ToLowerInvariant(parts[1][0]) + parts[1].Substring(1).Replace(" ", "");
+                var parts = routeId.Split(GoXLRServer.RoutingSeparator);
+                parts[0] = char.ToLowerInvariant(parts[0][0]) + parts[0].Substring(1).Replace(" ", "");
+                parts[1] = char.ToLowerInvariant(parts[1][0]) + parts[1].Substring(1).Replace(" ", "");
 
-                    //TODO: Fix broken states, all in Samples column is broken now:
-                    var stateId = PluginId + ".state.routing." + parts[0] + "|" + parts[1];
-                    if (_stateTracker.ContainsKey(stateId) && _stateTracker[stateId] == state.Value)
-                        continue;
+                //TODO: Fix broken states, all in Samples column is broken now:
+                var stateId = PluginId + ".state.routing." + parts[0] + "|" + parts[1];
+                if (_stateTracker.ContainsKey(stateId) && _stateTracker[stateId] == state)
+                    return;
 
-                    _stateTracker[stateId] = state.Value;
-                    _client.StateUpdate(stateId, state.Value ? "On" : "Off");
-                }
+                _stateTracker[stateId] = state;
+                _client.StateUpdate(stateId, state == 0 ? "On" : "Off");
             };
         }
         

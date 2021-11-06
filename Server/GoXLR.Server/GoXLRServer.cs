@@ -27,32 +27,30 @@ namespace GoXLR.Server
 
         public Action<string> UpdateSelectedProfileEvent { get; set; }
 
-        public Action UpdateRoutingEvent { get; set; }
+        public Action<string, int> UpdateRoutingEvent { get; set; }
 
-        public Dictionary<string, bool> RoutingStates { get; }
-        
+        public const char RoutingSeparator = '|'; //TODO: Create better logic?
+
         public GoXLRServer(ILogger<GoXLRServer> logger,
             IOptions<WebSocketServerSettings> options)
         {
             _logger = logger;
             _settings = options.Value;
-
-            RoutingStates = GetRoutingTable()
-                .ToDictionary(routingKey => routingKey, _ => false);
-
+            
             var profileFetcherThread = new Thread(FetchProfilesThreadSync) { IsBackground = true };
             profileFetcherThread.Start();
         }
 
         private static string[] GetRoutingTable()
         {
+            //These names are reused in RoutingInput and RoutingOutput, as well as 
             var inputs = new[] { "Mic", "Chat", "Music", "Game", "Console", "Line In", "System", "Samples" };
             var outputs = new[] { "Headphones", "Broadcast Mix", "Line Out", "Chat Mic", "Sampler" };
 
             var query =
                 from input in inputs
                 from output in outputs
-                select $"{input}|{output}";
+                select $"{input}{RoutingSeparator}{output}";
 
             return query.ToArray();
         }
@@ -182,10 +180,8 @@ namespace GoXLR.Server
                             {
                                 Console.WriteLine("Yay");
                             }
-
-                            RoutingStates[propertyContext] = routingState == 0;
-
-                            UpdateRoutingEvent?.Invoke();
+                            
+                            UpdateRoutingEvent?.Invoke(propertyContext, routingState);
 
                             break;
 
@@ -247,8 +243,12 @@ namespace GoXLR.Server
         private void ConnectedAndSubscribeToRoutingStates()
         {
             //Register subscription to all possible routing as this is already known.
-            var payload = RoutingStates
-                .Select(context => new { action = "com.tchelicon.goxlr.routingtable", context = context.Key })
+            var payload = GetRoutingTable()
+                .Select(routingId => new
+                {
+                    action = "com.tchelicon.goxlr.routingtable",
+                    context = routingId
+                })
                 .ToList();
             
             var json = JsonSerializer.Serialize(new
@@ -314,7 +314,7 @@ namespace GoXLR.Server
 
         private void HandleRoutingTableSettingsEvent(string context)
         {
-            var segments = context.Split('|');
+            var segments = context.Split(RoutingSeparator);
             var routingInput = segments[0];
             var routingOutput = segments[1];
             
