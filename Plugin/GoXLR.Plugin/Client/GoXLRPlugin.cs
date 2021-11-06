@@ -88,7 +88,7 @@ namespace GoXLR.TouchPortal.Plugin.Client
                 if (message.ActionId.EndsWith(".profiles.action.change") &&
                     message.ListId.EndsWith(".profiles.action.change.data.clients"))
                 {
-                    var profiles = _server.ClientData?.Profiles;
+                    var profiles = _server.Profiles;
                     if (profiles is null)
                         return;
                     
@@ -160,11 +160,9 @@ namespace GoXLR.TouchPortal.Plugin.Client
         {
             try
             {
-                var clientData = _server.ClientData;
-                if (clientData is null)
+                var client = _server.Client;
+                if (client is null)
                     return;
-
-                var client = clientData.ClientIdentifier.ClientIpAddress;
 
                 //Update states:
                 _client.StateUpdate(PluginId + ".state.connectedClient", client);

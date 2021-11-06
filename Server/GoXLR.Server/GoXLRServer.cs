@@ -21,7 +21,8 @@ namespace GoXLR.Server
         
         private IWebSocketConnection _socket;
 
-        public ClientData ClientData { get; private set; }
+        public string[] Profiles { get; private set; }
+        public string Client { get; private set; }
 
         public Action UpdateConnectedClientsEvent { get; set; }
 
@@ -92,9 +93,8 @@ namespace GoXLR.Server
         private void OnClientConnecting(IWebSocketConnection socket)
         {
             _socket = socket;
-
-            var connectionInfo = socket.ConnectionInfo;
-            var identifier = new ClientIdentifier(connectionInfo.ClientIpAddress, connectionInfo.ClientPort);
+            
+            Client = socket.ConnectionInfo.ClientIpAddress;
 
             socket.OnOpen = () =>
             {
@@ -103,7 +103,8 @@ namespace GoXLR.Server
 
             socket.OnClose = () =>
             {
-                ClientData = null;
+                Profiles = null;
+                Client = null;
 
                 _logger.LogInformation($"Connection closed {socket.ConnectionInfo.ClientIpAddress}.");
                 
@@ -202,21 +203,20 @@ namespace GoXLR.Server
                                 .ToArray();
 
                             //TODO: Register new profiles
-                            var oldData = ClientData ?? new ClientData(identifier, Array.Empty<string>());
+                            var oldProfiles = Profiles ?? Array.Empty<string>();
                             
                             //Set client data:
-                            var clientData = new ClientData(identifier, profiles);
-                            ClientData = clientData;
+                            Profiles = profiles;
 
                             //Update client list, with data:
                             UpdateConnectedClientsEvent?.Invoke();
 
                             //TODO: If it has changed... report... instead of ignore if not "fetchingProfiles".
 
-                            var profilesToRegister = profiles.Except(oldData.Profiles).ToArray();
+                            var profilesToRegister = profiles.Except(oldProfiles).ToArray();
                             SubscribeToProfileStates(profilesToRegister);
 
-                            var profilesToUnRegister = oldData.Profiles.Except(profiles).ToArray();
+                            var profilesToUnRegister = oldProfiles.Except(profiles).ToArray();
                             UnSubscribeToProfileStates(profilesToUnRegister);
 
                             break;
