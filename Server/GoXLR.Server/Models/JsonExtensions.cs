@@ -1,28 +1,47 @@
-﻿using System.Text.Json;
+﻿using System.Linq;
+using System.Text.Json;
 
 namespace GoXLR.Server.Models
 {
     public static class JsonExtensions
     {
-        public static TResult GetValue<TResult>(this JsonElement jsonElement, string propertyName)
-        {
-            if (jsonElement.TryGetProperty(propertyName, out var value))
-            {
-                switch (value.ValueKind)
-                {
-                    case JsonValueKind.String:
-                        var stringValue = value.GetString();
-                        return Cast<string, TResult>(stringValue);
-                }
-            }
 
-            return default;
+        public static string[] GetProfilesFromPayload(this JsonElement jsonElement)
+        {
+            return jsonElement
+                .GetProperty("payload")
+                .GetProperty("Profiles")
+                .EnumerateArray()
+                .Select(element => element.GetString())
+                .ToArray();
         }
 
-        private static TResult Cast<TValue, TResult>(TValue value)
+        public static int GetStateFromPayload(this JsonElement jsonElement)
         {
-            return value is TResult result
-                ? result
+            return jsonElement
+                .GetProperty("payload")
+                .GetProperty("state")
+                .GetInt32();
+        }
+
+        public static string GetContext(this JsonElement jsonElement)
+        {
+            return jsonElement.TryGetProperty("context", out var value)
+                ? value.GetString()
+                : default;
+        }
+
+        public static string GetAction(this JsonElement jsonElement)
+        {
+            return jsonElement.TryGetProperty("action", out var value)
+                ? value.GetString()
+                : default;
+        }
+
+        public static string GetEvent(this JsonElement jsonElement)
+        {
+            return jsonElement.TryGetProperty("event", out var value)
+                ? value.GetString()
                 : default;
         }
     }

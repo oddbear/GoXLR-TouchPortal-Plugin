@@ -123,9 +123,9 @@ namespace GoXLR.Server
 
                     var root = document.RootElement;
 
-                    var propertyAction = root.GetValue<string>("action");
-                    var propertyEvent = root.GetValue<string>("event");
-                    var propertyContext = root.GetValue<string>("context");
+                    var propertyAction = root.GetAction();
+                    var propertyEvent = root.GetEvent();
+                    var propertyContext = root.GetContext();
 
                     _logger.LogInformation($"Handling: {propertyEvent}");
                     switch (propertyEvent)
@@ -158,10 +158,7 @@ namespace GoXLR.Server
                         case "setState"
                             when propertyAction == "com.tchelicon.goxlr.profilechange":
 
-                            var profileState = root
-                                .GetProperty("payload")
-                                .GetProperty("state")
-                                .GetInt32();
+                            var profileState = root.GetStateFromPayload();
 
                             if (profileState == 0)
                                 UpdateSelectedProfileEvent?.Invoke(propertyContext);
@@ -171,10 +168,7 @@ namespace GoXLR.Server
                         case "setState"
                             when propertyAction == "com.tchelicon.goxlr.routingtable":
 
-                            var routingState = root
-                                .GetProperty("payload")
-                                .GetProperty("state")
-                                .GetInt32();
+                            var routingState = root.GetStateFromPayload();
 
                             //TODO: Why is not the Samples column working?
                             if (propertyContext.Contains("Samples"))
@@ -195,12 +189,7 @@ namespace GoXLR.Server
                                 break;
 
                             //Format:
-                            var profiles = root
-                                .GetProperty("payload")
-                                .GetProperty("Profiles")
-                                .EnumerateArray()
-                                .Select(element => element.GetString())
-                                .ToArray();
+                            var profiles = root.GetProfilesFromPayload();
 
                             //TODO: Register new profiles
                             var oldProfiles = Profiles ?? Array.Empty<string>();
