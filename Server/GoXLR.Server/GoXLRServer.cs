@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using Fleck;
+using GoXLR.Server.Enums;
 using GoXLR.Server.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -45,12 +46,11 @@ namespace GoXLR.Server
         private static string[] GetRoutingTable()
         {
             //These names are reused in RoutingInput and RoutingOutput, as well as 
-            var inputs = new[] { "Mic", "Chat", "Music", "Game", "Console", "Line In", "System", "Samples" };
-            var outputs = new[] { "Headphones", "Broadcast Mix", "Line Out", "Chat Mic", "Sampler" };
-
             var query =
-                from input in inputs
-                from output in outputs
+                from input in Enum.GetValues<RouteInput>()
+                from output in Enum.GetValues<RouteOutput>()
+                where input != RouteInput.Chat && output != RouteOutput.ChatMic
+                where input != RouteInput.Samples && output != RouteOutput.Sampler
                 select $"{input}{RoutingSeparator}{output}";
 
             return query.ToArray();
@@ -304,8 +304,8 @@ namespace GoXLR.Server
         private void HandleRoutingTableSettingsEvent(string context)
         {
             var segments = context.Split(RoutingSeparator);
-            var routingInput = segments[0];
-            var routingOutput = segments[1];
+            var routingInput = Enum.Parse<RouteInput>(segments[0]);
+            var routingOutput = Enum.Parse<RouteOutput>(segments[1]);
             
             var json = JsonSerializer.Serialize(new
             {
@@ -317,8 +317,8 @@ namespace GoXLR.Server
                     settings = new
                     {
                         RoutingAction = "Toggle",
-                        RoutingInput = routingInput,
-                        RoutingOutput = routingOutput
+                        RoutingInput = routingInput.GetEnumDescription(),
+                        RoutingOutput = routingOutput.GetEnumDescription()
                     }
                 }
             });

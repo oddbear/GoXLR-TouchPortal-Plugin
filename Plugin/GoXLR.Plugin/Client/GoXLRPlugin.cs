@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using GoXLR.Server;
+using GoXLR.Server.Enums;
 using GoXLR.Server.Models;
 using Microsoft.Extensions.Logging;
 using TouchPortalSDK;

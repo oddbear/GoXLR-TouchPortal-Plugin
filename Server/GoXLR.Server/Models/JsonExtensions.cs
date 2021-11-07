@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Text.Json;
+using GoXLR.Server.Enums;
 
 namespace GoXLR.Server.Models
 {

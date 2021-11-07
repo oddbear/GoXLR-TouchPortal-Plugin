@@ -1,4 +1,4 @@
-﻿namespace GoXLR.Server.Models
+﻿namespace GoXLR.Server.Enums
 {
     public enum State
     {
