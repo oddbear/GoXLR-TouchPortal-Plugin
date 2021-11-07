@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using GoXLR.Server;
-using GoXLR.Server.Models;
+using GoXLR.Server.Configuration;
 using GoXLR.TouchPortal.Plugin.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

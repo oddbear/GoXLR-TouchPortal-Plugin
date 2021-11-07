@@ -1,4 +1,5 @@
-﻿using GoXLR.Server.Models;
+﻿using GoXLR.Server.Configuration;
+using GoXLR.Server.Models;
 
 namespace GoXLR.TouchPortal.Plugin
 {

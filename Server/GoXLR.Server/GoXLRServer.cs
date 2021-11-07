@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using Fleck;
+using GoXLR.Server.Configuration;
 using GoXLR.Server.Enums;
 using GoXLR.Server.Extensions;
 using GoXLR.Server.Models;
@@ -23,13 +24,8 @@ namespace GoXLR.Server
 
         private Profile[] _profiles;
 
-        public Action<string> UpdateConnectedClientsEvent { get; set; }
-
-        public Action<Profile> UpdateSelectedProfileEvent { get; set; }
-        public Action<Profile[]> UpdateProfilesEvent { get; set; }
-
-        public Action<Routing, State> UpdateRoutingEvent { get; set; }
-
+        private IGoXLREventHandler _eventHandler;
+        
         public const char RoutingSeparator = '|'; //TODO: Create better logic?
 
         public GoXLRServer(ILogger<GoXLRServer> logger,
@@ -49,6 +45,11 @@ namespace GoXLR.Server
         {
             var server = new WebSocketServer($"ws://{_settings.IpAddress}:{_settings.Port}/?GOXLRApp");
             server.Start(OnClientConnecting);
+        }
+
+        public void SetEventHandler(IGoXLREventHandler eventHandler)
+        {
+            _eventHandler = eventHandler;
         }
 
         private void FetchProfilesThreadSync()
@@ -83,7 +84,7 @@ namespace GoXLR.Server
             _profiles = Array.Empty<Profile>();
 
             var client = socket.ConnectionInfo.ClientIpAddress;
-            UpdateConnectedClientsEvent?.Invoke(client);
+            _eventHandler?.ConnectedClientChangedEvent(new ConnectedClient(client));
 
             socket.OnOpen = () =>
             {
@@ -97,8 +98,8 @@ namespace GoXLR.Server
                 _profiles = Array.Empty<Profile>();
 
                 //UpdateProfilesEvent?.Invoke(_profiles); //This is a list and  not a state, should we clean this up?
-                UpdateConnectedClientsEvent?.Invoke(string.Empty); //Send disconnected event.
-                UpdateSelectedProfileEvent?.Invoke(new Profile(string.Empty));
+                _eventHandler?.ConnectedClientChangedEvent(ConnectedClient.Empty);
+                _eventHandler?.ProfileSelectedChangedEvent(Profile.Empty);
             };
 
             socket.OnMessage = (message) =>
@@ -151,7 +152,7 @@ namespace GoXLR.Server
                             var profileState = root.GetStateFromPayload();
 
                             if (profileState == State.On)
-                                UpdateSelectedProfileEvent?.Invoke(new Profile(propertyContext));
+                                _eventHandler?.ProfileSelectedChangedEvent(new Profile(propertyContext));
 
                             break;
 
@@ -163,7 +164,7 @@ namespace GoXLR.Server
                             if (!Routing.TryParseContext(propertyContext, out var routing))
                                 break;
 
-                            UpdateRoutingEvent?.Invoke(routing, routingState);
+                            _eventHandler?.RoutingStateChangedEvent(routing, routingState);
 
                             break;
 
@@ -179,7 +180,7 @@ namespace GoXLR.Server
 
                             //Profiles has changed:
                             _profiles = profiles;
-                            UpdateProfilesEvent?.Invoke(profiles);
+                            _eventHandler?.ProfileListChangedEvent(profiles);
 
                             if (added.Any())
                                 SubscribeToProfileStates(added);
@@ -283,8 +284,8 @@ namespace GoXLR.Server
         /// <summary>
         /// Sets a profile in the selected GoXLR App.
         /// </summary>
-        /// <param name="profileName"></param>
-        public void SetProfile(string profileName)
+        /// <param name="profile"></param>
+        public void SetProfile(Profile profile)
         {
             var json = JsonSerializer.Serialize(new
             {
@@ -294,7 +295,7 @@ namespace GoXLR.Server
                 {
                     settings = new
                     {
-                        SelectedProfile = profileName
+                        SelectedProfile = profile.Name
                     }
                 }
             });
