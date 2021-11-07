@@ -21,8 +21,7 @@ namespace GoXLR.Server
         
         private IWebSocketConnection _socket;
 
-        public Profile[] Profiles { get; private set; }
-        public string Client { get; private set; }
+        private Profile[] _profiles;
 
         public Action<string> UpdateConnectedClientsEvent { get; set; }
 
@@ -81,9 +80,11 @@ namespace GoXLR.Server
         private void OnClientConnecting(IWebSocketConnection socket)
         {
             _socket = socket;
-            
-            Client = socket.ConnectionInfo.ClientIpAddress;
-            UpdateConnectedClientsEvent?.Invoke(Client);
+
+            _profiles = Array.Empty<Profile>();
+
+            var client = socket.ConnectionInfo.ClientIpAddress;
+            UpdateConnectedClientsEvent?.Invoke(client);
 
             socket.OnOpen = () =>
             {
@@ -92,12 +93,12 @@ namespace GoXLR.Server
 
             socket.OnClose = () =>
             {
-                Profiles = null;
-                Client = null;
-
                 _logger.LogInformation($"Connection closed {socket.ConnectionInfo.ClientIpAddress}.");
-                
-                UpdateConnectedClientsEvent?.Invoke(string.Empty);
+
+                _profiles = Array.Empty<Profile>();
+
+                //UpdateProfilesEvent?.Invoke(_profiles); //This is a list and  not a state, should we clean this up?
+                UpdateConnectedClientsEvent?.Invoke(string.Empty); //Send disconnected event.
             };
 
             socket.OnMessage = (message) =>
@@ -121,7 +122,7 @@ namespace GoXLR.Server
                     {
                         case "goxlrConnectionEvent":
 
-                            ConnectedAndSubscribeToRoutingStates();
+                            HandleConnectedEventAndSubscribeToRoutingStates();
                             RequestProfiles();
 
                             break;
@@ -158,12 +159,6 @@ namespace GoXLR.Server
                             when propertyAction == "com.tchelicon.goxlr.routingtable":
 
                             var routingState = root.GetStateFromPayload();
-
-                            //TODO: Why is not the Samples column working?
-                            if (propertyContext.Contains("Samples"))
-                            {
-                                Console.WriteLine("Yay");
-                            }
                             
                             if (!Routing.TryParseContext(propertyContext, out var routing))
                                 break;
@@ -174,34 +169,23 @@ namespace GoXLR.Server
 
                         case "sendToPropertyInspector"
                             when propertyAction == "com.tchelicon.goxlr.profilechange":
+                            
+                            var profiles = root.GetProfilesFromPayload();
+                            
+                            var (added, removed) = _profiles.Diff(profiles);
 
-                            //We only care about the event where we want to fetch the profiles.
-                            //We can update TP on this, but this could be very noisy.
-                            if (propertyContext != "fetchingProfiles")
+                            if (!added.Any() && !removed.Any())
                                 break;
 
-                            //Format:
-                            var profiles = root.GetProfilesFromPayload();
-
-                            //TODO: Register new profiles
-                            var oldProfiles = Profiles ?? Array.Empty<Profile>();
-                            
-                            //Set client data:
-                            Profiles = profiles;
-
-                            //Update client list, with data:
-                            //TODO: Update profile list event.
-
-                            //TODO: If it has changed... report... instead of ignore if not "fetchingProfiles".
+                            //Profiles has changed:
+                            _profiles = profiles;
                             UpdateProfilesEvent?.Invoke(profiles);
 
-                            var diff = oldProfiles.Diff(profiles);
+                            if (added.Any())
+                                SubscribeToProfileStates(added);
 
-                            if (!diff.Added.Any() && !diff.Removed.Any())
-                                break;
-
-                            SubscribeToProfileStates(diff.Added);
-                            UnSubscribeToProfileStates(diff.Removed);
+                            if (removed.Any())
+                                UnSubscribeToProfileStates(removed);
 
                             break;
 
@@ -224,7 +208,7 @@ namespace GoXLR.Server
             socket.OnError = (exception) => _logger.LogError(exception.ToString());
         }
 
-        private void ConnectedAndSubscribeToRoutingStates()
+        private void HandleConnectedEventAndSubscribeToRoutingStates()
         {
             //Register subscription to all possible routing as this is already known.
             var json = JsonSerializer.Serialize(new
