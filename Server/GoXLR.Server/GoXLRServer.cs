@@ -24,9 +24,10 @@ namespace GoXLR.Server
         public Profile[] Profiles { get; private set; }
         public string Client { get; private set; }
 
-        public Action UpdateConnectedClientsEvent { get; set; }
+        public Action<string> UpdateConnectedClientsEvent { get; set; }
 
-        public Action<string> UpdateSelectedProfileEvent { get; set; }
+        public Action<Profile> UpdateSelectedProfileEvent { get; set; }
+        public Action<Profile[]> UpdateProfilesEvent { get; set; }
 
         public Action<Routing, State> UpdateRoutingEvent { get; set; }
 
@@ -37,7 +38,7 @@ namespace GoXLR.Server
         {
             _logger = logger;
             _settings = options.Value;
-            
+
             //TODO: This code does not seem to get new or deleted profiles. Just the old list. Is this a bug in the goxlr app?
             //var profileFetcherThread = new Thread(FetchProfilesThreadSync) { IsBackground = true };
             //profileFetcherThread.Start();
@@ -82,6 +83,7 @@ namespace GoXLR.Server
             _socket = socket;
             
             Client = socket.ConnectionInfo.ClientIpAddress;
+            UpdateConnectedClientsEvent?.Invoke(Client);
 
             socket.OnOpen = () =>
             {
@@ -95,7 +97,7 @@ namespace GoXLR.Server
 
                 _logger.LogInformation($"Connection closed {socket.ConnectionInfo.ClientIpAddress}.");
                 
-                UpdateConnectedClientsEvent?.Invoke();
+                UpdateConnectedClientsEvent?.Invoke(string.Empty);
             };
 
             socket.OnMessage = (message) =>
@@ -148,7 +150,7 @@ namespace GoXLR.Server
                             var profileState = root.GetStateFromPayload();
 
                             if (profileState == State.On)
-                                UpdateSelectedProfileEvent?.Invoke(propertyContext);
+                                UpdateSelectedProfileEvent?.Invoke(new Profile(propertyContext));
 
                             break;
 
@@ -188,9 +190,10 @@ namespace GoXLR.Server
                             Profiles = profiles;
 
                             //Update client list, with data:
-                            UpdateConnectedClientsEvent?.Invoke();
+                            //TODO: Update profile list event.
 
                             //TODO: If it has changed... report... instead of ignore if not "fetchingProfiles".
+                            UpdateProfilesEvent?.Invoke(profiles);
 
                             var diff = oldProfiles.Diff(profiles);
 

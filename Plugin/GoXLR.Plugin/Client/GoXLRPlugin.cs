@@ -36,12 +36,22 @@ namespace GoXLR.TouchPortal.Plugin.Client
             //Set the event handler for GoXLR Clients connected:
             _server.UpdateConnectedClientsEvent = UpdateClientState;
 
-            _server.UpdateSelectedProfileEvent += profileName =>
+            _server.UpdateProfilesEvent = profiles =>
             {
-                _client.StateUpdate(PluginId + ".state.selectedProfile", profileName ?? "");
+                var profileNames = profiles
+                    .Select(profile => profile.Name)
+                    .ToArray();
+
+                _client.ChoiceUpdate(PluginId + ".profiles.action.change.data.profiles", profileNames);
             };
 
-            _server.UpdateRoutingEvent += (routing, state) =>
+            _server.UpdateSelectedProfileEvent = profile =>
+            {
+                //TODO: State tracker?
+                _client.StateUpdate(PluginId + ".state.selectedProfile", profile.Name ?? "");
+            };
+
+            _server.UpdateRoutingEvent = (routing, state) =>
             {
                 if (routing is null)
                     return;
@@ -67,43 +77,6 @@ namespace GoXLR.TouchPortal.Plugin.Client
         public void OnInfoEvent(InfoEvent message)
         {
             _logger.LogInformation("Connect Event: Plugin Connected to TouchPortal.");
-            UpdateClientState();
-        }
-
-        /// <summary>
-        /// Event fired when selecting a item from the dropdown in the TP Configurator.
-        /// Updates a second list (instanceId) with the values from the selected client name/ip.
-        /// </summary>
-        /// <param name="message"></param>
-        public void OnListChangedEvent(ListChangeEvent message)
-        {
-            try
-            {
-                //Choice is changed: I can now update the next list:
-                _logger.LogInformation($"Choice Event: {message.ListId}'.");
-
-                if (string.IsNullOrWhiteSpace(message.InstanceId))
-                    return;
-
-                //Profiles client selected, fetch profiles for client:
-                if (message.ActionId.EndsWith(".profiles.action.change") &&
-                    message.ListId.EndsWith(".profiles.action.change.data.clients"))
-                {
-                    var profiles = _server.Profiles;
-                    if (profiles is null)
-                        return;
-
-                    var profileNames = profiles
-                        .Select(profile => profile.Name)
-                        .ToArray();
-
-                    _client.ChoiceUpdate(PluginId + ".profiles.action.change.data.profiles", profileNames, message.InstanceId);
-                }
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e.ToString());
-            }
         }
 
         public void OnActionEvent(ActionEvent message)
@@ -143,6 +116,11 @@ namespace GoXLR.TouchPortal.Plugin.Client
             Environment.Exit(0);
         }
 
+        public void OnListChangedEvent(ListChangeEvent message)
+        {
+            //NotImplemented
+        }
+
         public void OnBroadcastEvent(BroadcastEvent message)
         {
             //NotImplemented
@@ -161,14 +139,10 @@ namespace GoXLR.TouchPortal.Plugin.Client
         /// <summary>
         /// Updates the clients connected, and the state of the clients, ex. profiles.
         /// </summary>
-        public void UpdateClientState()
+        public void UpdateClientState(string client)
         {
             try
             {
-                var client = _server.Client;
-                if (client is null)
-                    return;
-
                 //Update states:
                 _client.StateUpdate(PluginId + ".state.connectedClient", client);
             }
