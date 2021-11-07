@@ -7,6 +7,32 @@ namespace GoXLR.Server.Models
 {
     public static class EnumExtensions
     {
+        public static bool TryParseEnumFromDescription<TEnum>(string description, out TEnum enumValue)
+            where TEnum : struct, Enum
+        {
+            try
+            {
+                var values = Enum.GetValues<TEnum>();
+                foreach (var value in values)
+                {
+                    if (value.GetEnumDescription() != description)
+                        continue;
+
+                    enumValue = value;
+                    return true;
+                }
+
+                enumValue = default;
+                return false;
+            }
+            catch
+            {
+                enumValue = default;
+                return false;
+            }
+
+        }
+
         public static string[] GetAllEnumDescription<TEnum>()
             where TEnum : struct, Enum
         {

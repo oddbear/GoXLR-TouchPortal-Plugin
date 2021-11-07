@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 using Fleck;
@@ -137,7 +135,7 @@ namespace GoXLR.Server
 
                         case "getSettings"
                             when propertyAction == "com.tchelicon.goxlr.routingtable":
-
+                            
                             HandleRoutingTableSettingsEvent(propertyContext);
 
                             break;
@@ -147,7 +145,7 @@ namespace GoXLR.Server
 
                             var profileState = root.GetStateFromPayload();
 
-                            if (profileState == 0)
+                            if (profileState == State.On)
                                 UpdateSelectedProfileEvent?.Invoke(propertyContext);
 
                             break;
@@ -278,28 +276,34 @@ namespace GoXLR.Server
             }
         }
 
-        private void HandleProfileChangeSettingsEvent(string context)
+        private void HandleProfileChangeSettingsEvent(string profileName)
         {
             var json = JsonSerializer.Serialize(new
             {
                 action = "com.tchelicon.goxlr.profilechange",
-                context,
+                context = profileName,
                 @event = "didReceiveSettings",
-                payload = new { settings = new { SelectedProfile = context } }
+                payload = new
+                {
+                    settings = new
+                    {
+                        SelectedProfile = profileName
+                    }
+                }
             });
 
             Send(json);
         }
 
-        private void HandleRoutingTableSettingsEvent(string context)
+        private void HandleRoutingTableSettingsEvent(string propertyContext)
         {
-            if (!Routing.TryParseContext(context, out var routing))
+            if (!Routing.TryParseContext(propertyContext, out var routing))
                 return;
-            
+
             var json = JsonSerializer.Serialize(new
             {
                 action = "com.tchelicon.goxlr.routingtable",
-                context,
+                context = propertyContext,
                 @event = "didReceiveSettings",
                 payload = new
                 {
@@ -356,9 +360,8 @@ namespace GoXLR.Server
         /// Sets a routing in the selected GoXLR App.
         /// </summary>
         /// <param name="action"></param>
-        /// <param name="input"></param>
-        /// <param name="output"></param>
-        public void SetRouting(string action, string input, string output)
+        /// <param name="routing"></param>
+        public void SetRouting(RoutingAction action, Routing routing)
         {
             var json = JsonSerializer.Serialize(new
             {
@@ -368,9 +371,9 @@ namespace GoXLR.Server
                 {
                     settings = new
                     {
-                        RoutingAction = action,
-                        RoutingInput = input,
-                        RoutingOutput = output
+                        RoutingAction = action.ToString(),
+                        RoutingInput = routing.Input.GetEnumDescription(),
+                        RoutingOutput = routing.Output.GetEnumDescription()
                     }
                 }
             });

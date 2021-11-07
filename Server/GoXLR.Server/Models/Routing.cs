@@ -7,6 +7,33 @@ namespace GoXLR.Server.Models
 {
     public record Routing(RoutingInput Input, RoutingOutput Output)
     {
+        public static bool TryParseDescription(string inputDescription, string outputDescription, out Routing routing)
+        {
+            try
+            {
+                if (!EnumExtensions.TryParseEnumFromDescription(inputDescription, out RoutingInput input))
+                {
+                    routing = default;
+                    return false;
+                }
+
+                if (!EnumExtensions.TryParseEnumFromDescription(outputDescription, out RoutingOutput output))
+                {
+                    routing = default;
+                    return false;
+                }
+
+                routing = new Routing(input, output);
+                return true;
+            }
+            catch
+            {
+                routing = default;
+                return false;
+            }
+
+        }
+        
         public static bool TryParseContext(string context, out Routing routing)
         {
             try

@@ -188,7 +188,13 @@ namespace GoXLR.TouchPortal.Plugin.Client
             var output = dict[name + ".outputs"];
             var action = dict[name + ".actions"];
 
-            _server.SetRouting(action, input, output);
+            if (!Enum.TryParse<RoutingAction>(action, out var routingAction))
+                return;
+
+            if (!Routing.TryParseDescription(input, output, out var routing))
+                return;
+            
+            _server.SetRouting(routingAction, routing);
         }
 
         /// <summary>
