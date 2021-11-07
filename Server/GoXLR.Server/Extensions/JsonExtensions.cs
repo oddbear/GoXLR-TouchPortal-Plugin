@@ -1,19 +1,21 @@
 ﻿using System.Linq;
 using System.Text.Json;
 using GoXLR.Server.Enums;
+using GoXLR.Server.Models;
 
-namespace GoXLR.Server.Models
+namespace GoXLR.Server.Extensions
 {
     public static class JsonExtensions
     {
 
-        public static string[] GetProfilesFromPayload(this JsonElement jsonElement)
+        public static Profile[] GetProfilesFromPayload(this JsonElement jsonElement)
         {
             return jsonElement
                 .GetProperty("payload")
                 .GetProperty("Profiles")
                 .EnumerateArray()
                 .Select(element => element.GetString())
+                .Select(profileName => new Profile(profileName))
                 .ToArray();
         }
 

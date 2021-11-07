@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 
-namespace GoXLR.Server.Models
+namespace GoXLR.Server.Extensions
 {
     public static class EnumExtensions
     {

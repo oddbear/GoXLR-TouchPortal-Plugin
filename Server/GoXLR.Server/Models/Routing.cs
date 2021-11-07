@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using GoXLR.Server.Enums;
+using GoXLR.Server.Extensions;
 
 namespace GoXLR.Server.Models
 {
@@ -51,7 +52,7 @@ namespace GoXLR.Server.Models
             }
         }
 
-        public static IEnumerable<string> GetRoutingTable()
+        public static IEnumerable<Routing> GetRoutingTable()
         {
             return
                 from input in Enum.GetValues<RoutingInput>()
@@ -60,7 +61,7 @@ namespace GoXLR.Server.Models
 
                 where routing != new Routing(RoutingInput.Chat, RoutingOutput.ChatMic)
                 where routing != new Routing(RoutingInput.Samples, RoutingOutput.Sampler)
-                select $"{routing.Input}{GoXLRServer.RoutingSeparator}{routing.Output}";
+                select routing;
         }
     }
 }

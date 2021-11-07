@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GoXLR.Server;
 using GoXLR.Server.Enums;
+using GoXLR.Server.Extensions;
 using GoXLR.Server.Models;
 using Microsoft.Extensions.Logging;
 using TouchPortalSDK;
@@ -91,8 +92,12 @@ namespace GoXLR.TouchPortal.Plugin.Client
                     var profiles = _server.Profiles;
                     if (profiles is null)
                         return;
-                    
-                    _client.ChoiceUpdate(PluginId + ".profiles.action.change.data.profiles", profiles, message.InstanceId);
+
+                    var profileNames = profiles
+                        .Select(profile => profile.Name)
+                        .ToArray();
+
+                    _client.ChoiceUpdate(PluginId + ".profiles.action.change.data.profiles", profileNames, message.InstanceId);
                 }
             }
             catch (Exception e)
