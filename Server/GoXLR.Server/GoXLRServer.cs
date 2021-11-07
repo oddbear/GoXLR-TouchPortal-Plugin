@@ -29,7 +29,7 @@ namespace GoXLR.Server
 
         public Action<string> UpdateSelectedProfileEvent { get; set; }
 
-        public Action<string, State> UpdateRoutingEvent { get; set; }
+        public Action<Routing, State> UpdateRoutingEvent { get; set; }
 
         public const char RoutingSeparator = '|'; //TODO: Create better logic?
 
@@ -42,20 +42,7 @@ namespace GoXLR.Server
             var profileFetcherThread = new Thread(FetchProfilesThreadSync) { IsBackground = true };
             profileFetcherThread.Start();
         }
-
-        private static string[] GetRoutingTable()
-        {
-            //These names are reused in RoutingInput and RoutingOutput, as well as 
-            var query =
-                from input in Enum.GetValues<RouteInput>()
-                from output in Enum.GetValues<RouteOutput>()
-                where input != RouteInput.Chat && output != RouteOutput.ChatMic
-                where input != RouteInput.Samples && output != RouteOutput.Sampler
-                select $"{input}{RoutingSeparator}{output}";
-
-            return query.ToArray();
-        }
-
+        
         /// <summary>
         /// Starts the WebSockets server.
         /// </summary>
@@ -176,7 +163,10 @@ namespace GoXLR.Server
                                 Console.WriteLine("Yay");
                             }
                             
-                            UpdateRoutingEvent?.Invoke(propertyContext, routingState);
+                            if (!Routing.TryParseContext(propertyContext, out var routing))
+                                break;
+
+                            UpdateRoutingEvent?.Invoke(routing, routingState);
 
                             break;
 
@@ -232,7 +222,7 @@ namespace GoXLR.Server
         private void ConnectedAndSubscribeToRoutingStates()
         {
             //Register subscription to all possible routing as this is already known.
-            var payload = GetRoutingTable()
+            var payload = Routing.GetRoutingTable()
                 .Select(routingId => new
                 {
                     action = "com.tchelicon.goxlr.routingtable",
@@ -303,9 +293,8 @@ namespace GoXLR.Server
 
         private void HandleRoutingTableSettingsEvent(string context)
         {
-            var segments = context.Split(RoutingSeparator);
-            var routingInput = Enum.Parse<RouteInput>(segments[0]);
-            var routingOutput = Enum.Parse<RouteOutput>(segments[1]);
+            if (!Routing.TryParseContext(context, out var routing))
+                return;
             
             var json = JsonSerializer.Serialize(new
             {
@@ -316,9 +305,9 @@ namespace GoXLR.Server
                 {
                     settings = new
                     {
-                        RoutingAction = "Toggle",
-                        RoutingInput = routingInput.GetEnumDescription(),
-                        RoutingOutput = routingOutput.GetEnumDescription()
+                        RoutingAction = RoutingAction.Toggle.ToString(),
+                        RoutingInput = routing.Input.GetEnumDescription(),
+                        RoutingOutput = routing.Output.GetEnumDescription()
                     }
                 }
             });

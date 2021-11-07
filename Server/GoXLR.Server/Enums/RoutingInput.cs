@@ -2,7 +2,7 @@
 
 namespace GoXLR.Server.Enums
 {
-    public enum RouteInput
+    public enum RoutingInput
     {
         [Description("Mic")]
         Mic,

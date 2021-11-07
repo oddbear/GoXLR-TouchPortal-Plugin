@@ -40,17 +40,15 @@ namespace GoXLR.TouchPortal.Plugin.Client
                 _client.StateUpdate(PluginId + ".state.selectedProfile", profileName ?? "");
             };
 
-            _server.UpdateRoutingEvent += (routeId, state) =>
+            _server.UpdateRoutingEvent += (routing, state) =>
             {
-                if (string.IsNullOrWhiteSpace(routeId))
+                if (routing is null)
                     return;
-
-                var parts = routeId.Split(GoXLRServer.RoutingSeparator);
-                parts[0] = char.ToLowerInvariant(parts[0][0]) + parts[0].Substring(1).Replace(" ", "");
-                parts[1] = char.ToLowerInvariant(parts[1][0]) + parts[1].Substring(1).Replace(" ", "");
-
+                
                 //TODO: Fix broken states, all in Samples column is broken now:
-                var stateId = PluginId + ".state.routing." + parts[0] + "|" + parts[1];
+                var input = routing.Input.GetEnumDescription();
+                var output = routing.Output.GetEnumDescription();
+                var stateId = $"{PluginId}.state:({input}|{output})";
                 if (_stateTracker.ContainsKey(stateId) && _stateTracker[stateId] == state)
                     return;
 
@@ -184,9 +182,8 @@ namespace GoXLR.TouchPortal.Plugin.Client
         {
             var dict = datalist
                 .ToDictionary(kv => kv.Id, kv => kv.Value);
-
-            dict.TryGetValue(name + ".clients", out var clientIp);
             
+            //For these to be "parse able" to Routing class, we need to parse them from the Description.
             var input = dict[name + ".inputs"];
             var output = dict[name + ".outputs"];
             var action = dict[name + ".actions"];

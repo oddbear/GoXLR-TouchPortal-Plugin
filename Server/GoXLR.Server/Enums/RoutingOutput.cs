@@ -2,7 +2,7 @@
 
 namespace GoXLR.Server.Enums
 {
-    public enum RouteOutput
+    public enum RoutingOutput
     {
         [Description("Headphones")]
         Headphones,
