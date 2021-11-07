@@ -47,8 +47,11 @@ namespace GoXLR.TouchPortal.Plugin.Client
 
             _server.UpdateSelectedProfileEvent = profile =>
             {
-                //TODO: State tracker?
-                _client.StateUpdate(PluginId + ".state.selectedProfile", profile.Name ?? "");
+                if (profile is null)
+                    return;
+
+                //TODO: Fix broken list, list is only updated the first time it's fetched (Issue from the GoXLR App 1.4.4.165):
+                _client.StateUpdate(PluginId + ".state.selectedProfile", profile.Name);
             };
 
             _server.UpdateRoutingEvent = (routing, state) =>
@@ -56,7 +59,7 @@ namespace GoXLR.TouchPortal.Plugin.Client
                 if (routing is null)
                     return;
                 
-                //TODO: Fix broken states, all in Samples column is broken now:
+                //TODO: Fix broken states, all in Samples column is broken now (Issue from the GoXLR App 1.4.4.165):
                 var input = routing.Input.GetEnumDescription();
                 var output = routing.Output.GetEnumDescription();
                 var stateId = $"{PluginId}.state:({input}|{output})";

@@ -37,8 +37,7 @@ namespace GoXLR.Server
         {
             _logger = logger;
             _settings = options.Value;
-
-            //TODO: This code does not seem to get new or deleted profiles. Just the old list. Is this a bug in the goxlr app?
+            
             //var profileFetcherThread = new Thread(FetchProfilesThreadSync) { IsBackground = true };
             //profileFetcherThread.Start();
         }
@@ -99,6 +98,7 @@ namespace GoXLR.Server
 
                 //UpdateProfilesEvent?.Invoke(_profiles); //This is a list and  not a state, should we clean this up?
                 UpdateConnectedClientsEvent?.Invoke(string.Empty); //Send disconnected event.
+                UpdateSelectedProfileEvent?.Invoke(new Profile(string.Empty));
             };
 
             socket.OnMessage = (message) =>
