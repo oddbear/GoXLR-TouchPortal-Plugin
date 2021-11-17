@@ -17,7 +17,6 @@ namespace GoXLR.TouchPortal.Plugin.Client
         public GoXLREventHandler(ITouchPortalClient client)
         {
             _client = client;
-            _stateTracker = new();
         }
         
         public void ConnectedClientChangedEvent(ConnectedClient client)
@@ -51,7 +50,7 @@ namespace GoXLR.TouchPortal.Plugin.Client
             //TODO: Fix broken states, all in Samples column is broken now (Issue from the GoXLR App 1.4.4.165):
             if (_stateTracker.ContainsKey(routing) && _stateTracker[routing] == state)
                 return;
-
+            
             _stateTracker[routing] = state;
 
             var stateId = Identifiers.GetStateId(routing);

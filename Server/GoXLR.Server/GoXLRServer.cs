@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using Fleck;
+using GoXLR.Server.Commands;
 using GoXLR.Server.Configuration;
 using GoXLR.Server.Enums;
 using GoXLR.Server.Extensions;
@@ -20,7 +22,7 @@ namespace GoXLR.Server
         
         private readonly WebSocketServerSettings _settings;
         
-        private IWebSocketConnection _socket;
+        private CommandHandler _commandHandler;
 
         private Profile[] _profiles;
 
@@ -58,7 +60,7 @@ namespace GoXLR.Server
             {
                 try
                 {
-                    if (_socket?.IsAvailable != true)
+                    if (_commandHandler?.IsAvailable != true)
                         continue;
 
                     //Get updated profiles:
@@ -79,7 +81,7 @@ namespace GoXLR.Server
         /// <param name="socket"></param>
         private void OnClientConnecting(IWebSocketConnection socket)
         {
-            _socket = socket;
+            _commandHandler = new CommandHandler(socket, _logger);
 
             _profiles = Array.Empty<Profile>();
 
@@ -182,11 +184,8 @@ namespace GoXLR.Server
                             _profiles = profiles;
                             _eventHandler?.ProfileListChangedEvent(profiles);
 
-                            if (added.Any())
-                                SubscribeToProfileStates(added);
-
-                            if (removed.Any())
-                                UnSubscribeToProfileStates(removed);
+                            SubscribeToProfileStates(added);
+                            UnSubscribeToProfileStates(removed);
 
                             break;
 
@@ -209,76 +208,12 @@ namespace GoXLR.Server
             socket.OnError = (exception) => _logger.LogError(exception.ToString());
         }
 
-        private void HandleConnectedEventAndSubscribeToRoutingStates()
-        {
-            //Register subscription to all possible routing as this is already known.
-            var json = JsonSerializer.Serialize(new
-            {
-                @event = "goxlrConnectionEvent",
-                payload = Routing.GetRoutingTable()
-                    .Select(routing => new
-                    {
-                        action = "com.tchelicon.goxlr.routingtable",
-                        context = $"{routing.Input}{RoutingSeparator}{routing.Output}"
-                    })
-                    .ToArray()
-            });
-
-            Send(json);
-        }
-
-        private void SubscribeToProfileStates(Profile[] profiles)
-        {
-            foreach (var profile in profiles)
-            {
-                //It's required to send a propertyInspectorDidAppear at least once, not sure why.
-
-                var propertyInspectorDidAppear = JsonSerializer.Serialize(new
-                {
-                    action = "com.tchelicon.goxlr.profilechange",
-                    context = profile.Name,
-                    @event = "propertyInspectorDidAppear"
-                });
-                var willAppear = JsonSerializer.Serialize(new
-                {
-                    action = "com.tchelicon.goxlr.profilechange",
-                    context = profile.Name,
-                    @event = "willAppear"
-                });
-                
-                Send(propertyInspectorDidAppear);
-                Send(willAppear);
-            }
-        }
-
-        private void UnSubscribeToProfileStates(Profile[] profiles)
-        {
-            foreach (var profile in profiles)
-            {
-                var json = JsonSerializer.Serialize(new
-                {
-                    action = "com.tchelicon.goxlr.profilechange",
-                    context = profile.Name,
-                    @event = "willDisappear"
-                });
-
-                Send(json);
-            }
-        }
-        
         /// <summary>
         /// Fetching profiles from the selected GoXLR App.
         /// </summary>
         private void RequestProfiles()
         {
-            var json = JsonSerializer.Serialize(new
-            {
-                action = "com.tchelicon.goxlr.profilechange",
-                context = "fetchingProfiles",
-                @event = "propertyInspectorDidAppear"
-            });
-            
-            Send(json);
+            _commandHandler.Send(new RequestProfilesCommand());
         }
 
         /// <summary>
@@ -287,39 +222,7 @@ namespace GoXLR.Server
         /// <param name="profile"></param>
         public void SetProfile(Profile profile)
         {
-            var json = JsonSerializer.Serialize(new
-            {
-                action = "com.tchelicon.goxlr.profilechange",
-                @event = "keyUp",
-                payload = new
-                {
-                    settings = new
-                    {
-                        SelectedProfile = profile.Name
-                    }
-                }
-            });
-
-            Send(json);
-        }
-
-        private void HandleProfileChangeSettingsEvent(string profileName)
-        {
-            var json = JsonSerializer.Serialize(new
-            {
-                action = "com.tchelicon.goxlr.profilechange",
-                context = profileName,
-                @event = "didReceiveSettings",
-                payload = new
-                {
-                    settings = new
-                    {
-                        SelectedProfile = profileName
-                    }
-                }
-            });
-
-            Send(json);
+            _commandHandler.Send(new SetProfileCommand(profile));
         }
 
         /// <summary>
@@ -329,22 +232,34 @@ namespace GoXLR.Server
         /// <param name="routing"></param>
         public void SetRouting(RoutingAction action, Routing routing)
         {
-            var json = JsonSerializer.Serialize(new
+            _commandHandler.Send(new SetRoutingCommand(action, routing));
+        }
+
+        private void SubscribeToProfileStates(IEnumerable<Profile> profiles)
+        {
+            foreach (var profile in profiles)
             {
-                action = "com.tchelicon.goxlr.routingtable",
-                @event = "keyUp",
-                payload = new
-                {
-                    settings = new
-                    {
-                        RoutingAction = action.ToString(),
-                        RoutingInput = routing.Input.GetEnumDescription(),
-                        RoutingOutput = routing.Output.GetEnumDescription()
-                    }
-                }
-            });
-            
-            Send(json);
+                _commandHandler.Send(new SubscribeToProfileStateCommand(profile));
+            }
+        }
+
+        private void UnSubscribeToProfileStates(IEnumerable<Profile> profiles)
+        {
+            foreach (var profile in profiles)
+            {
+                _commandHandler.Send(new UnSubscribeToProfileStateCommand(profile));
+            }
+        }
+
+        private void HandleConnectedEventAndSubscribeToRoutingStates()
+        {
+            _commandHandler.Send(new SubscribeToRoutingStatesCommand());
+        }
+
+        private void HandleProfileChangeSettingsEvent(string profileName)
+        {
+            //Part of the registration chain when registering a state subscription event:
+            _commandHandler.Send(new RespondCanReceiveProfileStateCommand(profileName));
         }
 
         private void HandleRoutingTableSettingsEvent(string propertyContext)
@@ -352,29 +267,8 @@ namespace GoXLR.Server
             if (!Routing.TryParseContext(propertyContext, out var routing))
                 return;
 
-            var json = JsonSerializer.Serialize(new
-            {
-                action = "com.tchelicon.goxlr.routingtable",
-                context = propertyContext,
-                @event = "didReceiveSettings",
-                payload = new
-                {
-                    settings = new
-                    {
-                        RoutingAction = RoutingAction.Toggle.ToString(),
-                        RoutingInput = routing.Input.GetEnumDescription(),
-                        RoutingOutput = routing.Output.GetEnumDescription()
-                    }
-                }
-            });
-
-            Send(json);
-        }
-
-        private void Send(string message)
-        {
-            _logger.LogWarning("Send message: " + message);
-            _ = _socket?.Send(message);
+            //Part of the registration chain when registering a state subscription event:
+            _commandHandler.Send(new RespondCanReceiveRoutingStateCommand(propertyContext, routing));
         }
     }
 }

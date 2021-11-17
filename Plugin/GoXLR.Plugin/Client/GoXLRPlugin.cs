@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using GoXLR.Server;
-using GoXLR.Server.Enums;
-using GoXLR.Server.Models;
 using GoXLR.TouchPortal.Plugin.Configuration;
 using GoXLR.TouchPortal.Plugin.Models;
 using Microsoft.Extensions.Logging;
