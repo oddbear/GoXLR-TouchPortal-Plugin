@@ -2,6 +2,9 @@
 
 namespace GoXLR.Server.Commands
 {
+    /// <summary>
+    /// Fetching profiles from the selected GoXLR App.
+    /// </summary>
     internal class RequestProfilesCommand : CommandBase
     {
         public RequestProfilesCommand()

@@ -14,8 +14,6 @@ namespace GoXLR.Server.Commands
             _logger = logger;
         }
 
-        public bool IsAvailable => _socket.IsAvailable;
-
         public void Send(CommandBase command)
         {
             foreach (var json in command.Json)
@@ -26,6 +24,9 @@ namespace GoXLR.Server.Commands
 
         public void Send(string message)
         {
+            if (_socket?.IsAvailable != true)
+                return;
+
             _logger.LogWarning("Send message: " + message);
             _ = _socket?.Send(message);
         }

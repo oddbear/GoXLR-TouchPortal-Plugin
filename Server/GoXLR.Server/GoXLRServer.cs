@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using Fleck;
@@ -8,6 +6,7 @@ using GoXLR.Server.Commands;
 using GoXLR.Server.Configuration;
 using GoXLR.Server.Enums;
 using GoXLR.Server.Extensions;
+using GoXLR.Server.Handlers;
 using GoXLR.Server.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -60,11 +59,8 @@ namespace GoXLR.Server
             {
                 try
                 {
-                    if (_commandHandler?.IsAvailable != true)
-                        continue;
-
                     //Get updated profiles:
-                    RequestProfiles();
+                    _commandHandler?.Send(new RequestProfilesCommand());
                 }
                 catch (Exception exception)
                 {
@@ -124,75 +120,36 @@ namespace GoXLR.Server
                     switch (propertyEvent)
                     {
                         case "goxlrConnectionEvent":
-
-                            HandleConnectedEventAndSubscribeToRoutingStates();
-                            RequestProfiles();
-
+                            GoxlrConnectionEvent.Handle(_commandHandler);
                             break;
 
                         case "getSettings"
                             when propertyAction == "com.tchelicon.goxlr.profilechange":
-
-                            //We don't care about this "button". This is "global", and there is no state to ask for.
-                            if (propertyContext == "fetchingProfiles")
-                                break;
-
-                            HandleProfileChangeSettingsEvent(propertyContext);
-
+                            ProfileChangeSettingsEvent.Handle(_commandHandler, propertyContext);
                             break;
 
                         case "getSettings"
                             when propertyAction == "com.tchelicon.goxlr.routingtable":
-                            
-                            HandleRoutingTableSettingsEvent(propertyContext);
-
+                            RoutingTableSettingsEvent.Handle(_commandHandler, propertyContext);
                             break;
 
                         case "setState"
                             when propertyAction == "com.tchelicon.goxlr.profilechange":
-
-                            var profileState = root.GetStateFromPayload();
-
-                            if (profileState == State.On)
-                                _eventHandler?.ProfileSelectedChangedEvent(new Profile(propertyContext));
-
+                            SetProfileSelectedStateEvent.Handle(_eventHandler, root);
                             break;
 
                         case "setState"
                             when propertyAction == "com.tchelicon.goxlr.routingtable":
-
-                            var routingState = root.GetStateFromPayload();
-                            
-                            if (!Routing.TryParseContext(propertyContext, out var routing))
-                                break;
-
-                            _eventHandler?.RoutingStateChangedEvent(routing, routingState);
-
+                            SetRoutingStateEvent.Handle(_eventHandler, root);
                             break;
 
                         case "sendToPropertyInspector"
                             when propertyAction == "com.tchelicon.goxlr.profilechange":
-                            
-                            var profiles = root.GetProfilesFromPayload();
-                            
-                            var (added, removed) = _profiles.Diff(profiles);
-
-                            if (!added.Any() && !removed.Any())
-                                break;
-
-                            //Profiles has changed:
-                            _profiles = profiles;
-                            _eventHandler?.ProfileListChangedEvent(profiles);
-
-                            SubscribeToProfileStates(added);
-                            UnSubscribeToProfileStates(removed);
-
+                            GetUpdatedProfileListEvent.Handle(_commandHandler, _eventHandler, root);
                             break;
 
                         default:
-
                             _logger.LogError($"Unknown event '{propertyEvent}' and action '{propertyAction}' from GoXLR.");
-
                             break;
                     }
                 }
@@ -206,14 +163,6 @@ namespace GoXLR.Server
             //socket.OnPing = (bytes) => _logger.LogInformation("Ping: {0}", Convert.ToBase64String(bytes));
             //socket.OnPong = (bytes) => _logger.LogInformation("Pong: {0}", Convert.ToBase64String(bytes));
             socket.OnError = (exception) => _logger.LogError(exception.ToString());
-        }
-
-        /// <summary>
-        /// Fetching profiles from the selected GoXLR App.
-        /// </summary>
-        private void RequestProfiles()
-        {
-            _commandHandler.Send(new RequestProfilesCommand());
         }
 
         /// <summary>
@@ -233,42 +182,6 @@ namespace GoXLR.Server
         public void SetRouting(RoutingAction action, Routing routing)
         {
             _commandHandler.Send(new SetRoutingCommand(action, routing));
-        }
-
-        private void SubscribeToProfileStates(IEnumerable<Profile> profiles)
-        {
-            foreach (var profile in profiles)
-            {
-                _commandHandler.Send(new SubscribeToProfileStateCommand(profile));
-            }
-        }
-
-        private void UnSubscribeToProfileStates(IEnumerable<Profile> profiles)
-        {
-            foreach (var profile in profiles)
-            {
-                _commandHandler.Send(new UnSubscribeToProfileStateCommand(profile));
-            }
-        }
-
-        private void HandleConnectedEventAndSubscribeToRoutingStates()
-        {
-            _commandHandler.Send(new SubscribeToRoutingStatesCommand());
-        }
-
-        private void HandleProfileChangeSettingsEvent(string profileName)
-        {
-            //Part of the registration chain when registering a state subscription event:
-            _commandHandler.Send(new RespondCanReceiveProfileStateCommand(profileName));
-        }
-
-        private void HandleRoutingTableSettingsEvent(string propertyContext)
-        {
-            if (!Routing.TryParseContext(propertyContext, out var routing))
-                return;
-
-            //Part of the registration chain when registering a state subscription event:
-            _commandHandler.Send(new RespondCanReceiveRoutingStateCommand(propertyContext, routing));
         }
     }
 }
