@@ -1,5 +1,6 @@
 ﻿using Fleck;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace GoXLR.Server.Commands
 {
@@ -14,21 +15,21 @@ namespace GoXLR.Server.Commands
             _logger = logger;
         }
 
-        public void Send(CommandBase command)
+        public async Task Send(CommandBase command)
         {
             foreach (var json in command.Json)
             {
-                Send(json);
+                await Send(json);
             }
         }
 
-        public void Send(string message)
+        public async Task Send(string message)
         {
             if (_socket?.IsAvailable != true)
                 return;
 
             _logger.LogWarning("Send message: " + message);
-            _ = _socket?.Send(message);
+            await _socket?.Send(message);
         }
     }
 }

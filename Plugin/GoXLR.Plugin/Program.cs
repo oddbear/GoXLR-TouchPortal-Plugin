@@ -2,11 +2,14 @@ using System;
 using System.IO;
 using GoXLR.Server;
 using GoXLR.Server.Configuration;
+using GoXLR.Server.Models;
 using GoXLR.TouchPortal.Plugin.Client;
+using Lamar;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TouchPortalSDK.Configuration;
+using TouchPortalSDK.Interfaces;
 
 namespace GoXLR.TouchPortal.Plugin
 {
@@ -14,50 +17,77 @@ namespace GoXLR.TouchPortal.Plugin
     {
         public static void Main(string[] args)
         {
+            var container = new Container(cfg =>
+            {
+                var configuration = BuildConfiguration();
+
+                AddLogging(cfg, configuration);
+                AddTouchPortalPlugin(cfg, configuration);
+                AddGoXLRServer(cfg, configuration);
+            });
+
+            var logger = container.GetInstance<ILogger<Program>>();
+
+            //Start the GoXLR Server:
+            logger.LogInformation("Starting: GoXLR Server");
+            container.GetInstance<GoXLRServer>().Start();
+            logger.LogInformation("Started: GoXLR Server");
+
+            //Connect the Touch Portal Client to Touch Portal:
+            logger.LogInformation("Connecting: Touch Portal client");
+            container.GetInstance<ITouchPortalClient>().Connect();
+            logger.LogInformation("Connected: TouchPortal client");
+
+            var plugin = container.GetInstance<GoXLRPlugin>();
+            logger.LogInformation("Plugin is now running.");
+        }
+
+        private static void AddGoXLRServer(ServiceRegistry serviceRegistry, IConfiguration configuration)
+        {
+            serviceRegistry.Configure<WebSocketServerSettings>(configuration.GetSection("WebSocketServerSettings"));
+
+            serviceRegistry.IncludeRegistry<GoXLRServerRegistry>();
+        }
+
+        private static void AddTouchPortalPlugin(ServiceRegistry serviceRegistry, IConfiguration configuration)
+        {
+            serviceRegistry.AddTouchPortalSdk(configuration);
+
+            serviceRegistry.ForConcreteType<GoXLRPlugin>().Configure.Singleton();
+
+            serviceRegistry.For<ITouchPortalClient>().Use(context => {
+                var plugin = context.GetInstance<GoXLRPlugin>();
+                var clientFactory = context.GetInstance<ITouchPortalClientFactory>();
+
+                return clientFactory.Create(plugin);
+            }).Singleton();
+
+            serviceRegistry
+                .For<IGoXLREventHandler>()
+                .Use<GoXLREventHandler>()
+                .Singleton();
+
+            //Add General AppSettings:
+            serviceRegistry.Configure<AppSettings>(configuration);
+        }
+
+        private static void AddLogging(ServiceRegistry serviceRegistry, IConfiguration configuration)
+        {
+            serviceRegistry.AddLogging(configure =>
+            {
+                configure.AddSimpleConsole(options => options.TimestampFormat = "[yyyy.MM.dd HH:mm:ss] ");
+                configure.AddConfiguration(configuration.GetSection("Logging"));
+            });
+        }
+
+        private static IConfiguration BuildConfiguration()
+        {
             var configurationRoot = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetParent(AppContext.BaseDirectory).FullName)
                 .AddJsonFile("appsettings.json")
                 .Build();
 
-            var serviceCollection = new ServiceCollection();
-
-            //Add Logging:
-            serviceCollection.AddLogging(configure =>
-            {
-                configure.AddSimpleConsole(options => options.TimestampFormat = "[yyyy.MM.dd HH:mm:ss] ");
-                configure.AddConfiguration(configurationRoot.GetSection("Logging"));
-            });
-
-            var logger = serviceCollection
-                .BuildServiceProvider()
-                .GetRequiredService<ILogger<Program>>();
-            
-            //Add AppSettings:
-            serviceCollection.Configure<AppSettings>(configurationRoot);
-
-            //Add TouchPortal Client:
-            serviceCollection.AddTouchPortalSdk(configurationRoot);
-            serviceCollection.AddSingleton<GoXLRPlugin>();
-
-            //Add WebSocket Server:
-            serviceCollection.Configure<WebSocketServerSettings>(configurationRoot.GetSection("WebSocketServerSettings"));
-            serviceCollection.AddSingleton<GoXLRServer>();
-
-            var serviceProvider = serviceCollection.BuildServiceProvider();
-            
-            //Init GoXLR Server:
-            logger.LogInformation("Initializing GoXLR Server");
-            var goXlrServer = serviceProvider.GetRequiredService<GoXLRServer>();
-            goXlrServer.Init();
-            logger.LogInformation("GoXLR Server initialized");
-
-            //Init TouchPortal:
-            logger.LogInformation("Initializing TouchPortal client");
-            var touchPortalClient = serviceProvider.GetRequiredService<GoXLRPlugin>();
-            touchPortalClient.Init();
-            logger.LogInformation("TouchPortal client initialized");
-
-            logger.LogInformation("Plugin is now running.");
+            return configurationRoot;
         }
     }
 }

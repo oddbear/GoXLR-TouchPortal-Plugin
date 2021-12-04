@@ -8,6 +8,7 @@ using GoXLR.Server.Enums;
 using GoXLR.Server.Extensions;
 using GoXLR.Server.Handlers;
 using GoXLR.Server.Models;
+using Lamar;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -18,23 +19,23 @@ namespace GoXLR.Server
     public class GoXLRServer
     {
         private readonly ILogger _logger;
-        
+        private readonly IContainer _container;
         private readonly WebSocketServerSettings _settings;
         
-        private CommandHandler _commandHandler;
-
-        private Profile[] _profiles;
+        public GoXLRState State { get; private set; }
 
         private IGoXLREventHandler _eventHandler;
         
         public const char RoutingSeparator = '|'; //TODO: Create better logic?
 
         public GoXLRServer(ILogger<GoXLRServer> logger,
-            IOptions<WebSocketServerSettings> options)
+            IOptions<WebSocketServerSettings> options,
+            IContainer container)
         {
             _logger = logger;
+            _container = container;
             _settings = options.Value;
-            
+
             //var profileFetcherThread = new Thread(FetchProfilesThreadSync) { IsBackground = true };
             //profileFetcherThread.Start();
         }
@@ -42,15 +43,10 @@ namespace GoXLR.Server
         /// <summary>
         /// Starts the WebSockets server.
         /// </summary>
-        public void Init()
+        public void Start()
         {
             var server = new WebSocketServer($"ws://{_settings.IpAddress}:{_settings.Port}/?GOXLRApp");
             server.Start(OnClientConnecting);
-        }
-
-        public void SetEventHandler(IGoXLREventHandler eventHandler)
-        {
-            _eventHandler = eventHandler;
         }
 
         private void FetchProfilesThreadSync()
@@ -60,7 +56,7 @@ namespace GoXLR.Server
                 try
                 {
                     //Get updated profiles:
-                    _commandHandler?.Send(new RequestProfilesCommand());
+                    State?.CommandHandler?.Send(new RequestProfilesCommand());
                 }
                 catch (Exception exception)
                 {
@@ -77,12 +73,21 @@ namespace GoXLR.Server
         /// <param name="socket"></param>
         private void OnClientConnecting(IWebSocketConnection socket)
         {
-            _commandHandler = new CommandHandler(socket, _logger);
+            var nestedContainerScope = _container.GetNestedContainer();
+            nestedContainerScope.Inject(socket);
 
-            _profiles = Array.Empty<Profile>();
+            //Add ctor for state, socket should be here maybe?
+            var state = nestedContainerScope.GetInstance<GoXLRState>();
+            State = state; //todo: Remove (need to find a better approach).
 
-            var client = socket.ConnectionInfo.ClientIpAddress;
-            _eventHandler?.ConnectedClientChangedEvent(new ConnectedClient(client));
+            //var plugin = ActivatorUtilities.CreateInstance<GoXLRPlugin>(provider);
+
+            //TODO: How to get this from scope, on the ones using it by the Plugin (something needs to be removed from this class)?:
+            _eventHandler = state.EventHandler;
+
+            var notifier = nestedContainerScope.GetInstance<Notifier>();
+
+            _eventHandler?.ConnectedClientChangedEvent(state.Client);
 
             socket.OnOpen = () =>
             {
@@ -93,11 +98,13 @@ namespace GoXLR.Server
             {
                 _logger.LogInformation($"Connection closed {socket.ConnectionInfo.ClientIpAddress}.");
 
-                _profiles = Array.Empty<Profile>();
-
                 //UpdateProfilesEvent?.Invoke(_profiles); //This is a list and  not a state, should we clean this up?
-                _eventHandler?.ConnectedClientChangedEvent(ConnectedClient.Empty);
-                _eventHandler?.ProfileSelectedChangedEvent(Profile.Empty);
+                state.EventHandler?.ConnectedClientChangedEvent(ConnectedClient.Empty);
+                state.EventHandler?.ProfileSelectedChangedEvent(Profile.Empty);
+
+                //Remove tenant:
+                state.Profiles = Array.Empty<Profile>();
+                nestedContainerScope.Dispose();
             };
 
             socket.OnMessage = (message) =>
@@ -115,37 +122,43 @@ namespace GoXLR.Server
                     var propertyAction = root.GetAction();
                     var propertyEvent = root.GetEvent();
                     var propertyContext = root.GetContext();
+                    var propertyPayload = root.GetPayload();
+
+                    var notification = new MessageNotification
+                    {
+                        Action = propertyAction,
+                        Event = propertyEvent,
+                        Context = propertyContext,
+                        Payload = propertyPayload
+                    };
 
                     _logger.LogInformation($"Handling: {propertyEvent}");
+                    notifier.Publish(notification);
+
+                    //TODO: Remove, but need to have a handled or similar state...
                     switch (propertyEvent)
                     {
                         case "goxlrConnectionEvent":
-                            GoxlrConnectionEvent.Handle(_commandHandler);
                             break;
 
                         case "getSettings"
                             when propertyAction == "com.tchelicon.goxlr.profilechange":
-                            ProfileChangeSettingsEvent.Handle(_commandHandler, propertyContext);
                             break;
 
                         case "getSettings"
                             when propertyAction == "com.tchelicon.goxlr.routingtable":
-                            RoutingTableSettingsEvent.Handle(_commandHandler, propertyContext);
                             break;
 
                         case "setState"
                             when propertyAction == "com.tchelicon.goxlr.profilechange":
-                            SetProfileSelectedStateEvent.Handle(_eventHandler, root);
                             break;
 
                         case "setState"
                             when propertyAction == "com.tchelicon.goxlr.routingtable":
-                            SetRoutingStateEvent.Handle(_eventHandler, root);
                             break;
 
                         case "sendToPropertyInspector"
                             when propertyAction == "com.tchelicon.goxlr.profilechange":
-                            GetUpdatedProfileListEvent.Handle(_commandHandler, _eventHandler, root);
                             break;
 
                         default:
@@ -171,7 +184,7 @@ namespace GoXLR.Server
         /// <param name="profile"></param>
         public void SetProfile(Profile profile)
         {
-            _commandHandler.Send(new SetProfileCommand(profile));
+            State?.CommandHandler.Send(new SetProfileCommand(profile)).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -181,7 +194,32 @@ namespace GoXLR.Server
         /// <param name="routing"></param>
         public void SetRouting(RoutingAction action, Routing routing)
         {
-            _commandHandler.Send(new SetRoutingCommand(action, routing));
+            State?.CommandHandler.Send(new SetRoutingCommand(action, routing)).GetAwaiter().GetResult();
+        }
+    }
+
+    public class GoXLRState
+    {
+        private readonly IWebSocketConnection _socket;
+
+        public Profile[] Profiles { get; set; } = Array.Empty<Profile>();
+
+        public ConnectedClient Client { get; }
+
+        public IGoXLREventHandler EventHandler { get; }
+        public CommandHandler CommandHandler { get; }
+
+        public GoXLRState(
+            IWebSocketConnection socket,
+            IGoXLREventHandler eventHandler,
+            ILogger<CommandHandler> logger)
+        {
+            _socket = socket;
+            CommandHandler = new CommandHandler(socket, logger);
+            EventHandler = eventHandler;
+
+            var client = socket.ConnectionInfo.ClientIpAddress;
+            Client = new ConnectedClient(client);
         }
     }
 }

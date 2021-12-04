@@ -7,11 +7,16 @@ namespace GoXLR.Server.Extensions
 {
     public static class JsonExtensions
     {
+        public static JsonElement GetPayload(this JsonElement jsonElement)
+        {
+            return jsonElement.TryGetProperty("payload", out var payload)
+                ? payload
+                : default;
+        }
 
         public static Profile[] GetProfilesFromPayload(this JsonElement jsonElement)
         {
             return jsonElement
-                .GetProperty("payload")
                 .GetProperty("Profiles")
                 .EnumerateArray()
                 .Select(element => element.GetString())
@@ -22,7 +27,6 @@ namespace GoXLR.Server.Extensions
         public static State GetStateFromPayload(this JsonElement jsonElement)
         {
             return (State)jsonElement
-                .GetProperty("payload")
                 .GetProperty("state")
                 .GetInt32();
         }

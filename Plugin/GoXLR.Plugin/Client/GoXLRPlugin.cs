@@ -4,7 +4,6 @@ using GoXLR.TouchPortal.Plugin.Configuration;
 using GoXLR.TouchPortal.Plugin.Models;
 using Microsoft.Extensions.Logging;
 using TouchPortalSDK;
-using TouchPortalSDK.Interfaces;
 using TouchPortalSDK.Messages.Events;
 
 namespace GoXLR.TouchPortal.Plugin.Client
@@ -13,28 +12,15 @@ namespace GoXLR.TouchPortal.Plugin.Client
     {
         public string PluginId => Identifiers.Id;
 
-        private readonly ITouchPortalClient _client;
         private readonly GoXLRServer _server;
         private readonly ILogger<GoXLRPlugin> _logger;
 
-        public GoXLRPlugin(ITouchPortalClientFactory clientFactory,
-            GoXLRServer goXLRServer,
+        public GoXLRPlugin(GoXLRServer goXLRServer,
             ILogger<GoXLRPlugin> logger)
         {
-            //Set the event handler for TouchPortal:
-            _client = clientFactory.Create(this);
             //Set the event handler for GoXLR connected:
             _server = goXLRServer;
             _logger = logger;
-
-            //Set the event handler for GoXLR Clients connected:
-            _server.SetEventHandler(new GoXLREventHandler(_client));
-        }
-
-        public void Init()
-        {
-            //Connecting to TouchPortal:
-            _client.Connect();
         }
 
         public void OnInfoEvent(InfoEvent message)
