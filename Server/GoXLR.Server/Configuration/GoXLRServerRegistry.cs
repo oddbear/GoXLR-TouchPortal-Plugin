@@ -14,7 +14,6 @@ namespace GoXLR.Server.Configuration
 			ForConcreteType<GoXLRServer>().Configure.Singleton();
 
 			//The state is scoped to the connected client:
-			ForConcreteType<GoXLRState>().Configure.Scoped();
 			ForConcreteType<CommandHandler>().Configure.Scoped();
 
 			//Injectable, this means that we cannot know this before it is created.

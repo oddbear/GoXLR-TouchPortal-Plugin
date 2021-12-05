@@ -3,6 +3,7 @@ using GoXLR.Server.Handlers.Attributes;
 using GoXLR.Server.Handlers.Interfaces;
 using GoXLR.Server.Handlers.Models;
 using GoXLR.Server.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -12,16 +13,15 @@ namespace GoXLR.Server.Handlers
 {
     public class GetUpdatedProfileListEventHandler : INotificationHandler
     {
-        private readonly GoXLRState _state;
         private readonly CommandHandler _commandHandler;
         private readonly IGoXLREventHandler _eventHandler;
 
+        private Profile[] _profiles = Array.Empty<Profile>();
+
         public GetUpdatedProfileListEventHandler(
-            GoXLRState state,
             CommandHandler commandHandler,
             IGoXLREventHandler eventHandler)
         {
-            _state = state;
             _commandHandler = commandHandler;
             _eventHandler = eventHandler;
         }
@@ -31,14 +31,15 @@ namespace GoXLR.Server.Handlers
         {
             var profiles = notification.GetProfilesFromPayload();
 
-            var current = _state.Profiles;
+            var current = _profiles;
             var (added, removed) = Diff(current, profiles);
 
             if (!added.Any() && !removed.Any())
                 return;
 
             //Profiles has changed:
-            _state.Profiles = profiles;
+            _profiles = profiles;
+
             _eventHandler.ProfileListChangedEvent(profiles);
 
             foreach (var profile in added)
