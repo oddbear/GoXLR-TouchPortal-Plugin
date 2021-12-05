@@ -20,12 +20,12 @@ For aditional information, check the [Wiki](https://github.com/oddbear/GoXLR-Tou
 
 ### Setup:
 
-Download latest .NET Runtime from (5.0.0 or higher) https://dotnet.microsoft.com/download
+Download latest .NET 5.0 Console or Desktop Runtime from [Microsoft](https://dotnet.microsoft.com/download/dotnet/5.0/runtime)
 
 Download the latest tpp file from [releases](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases) (under assets):
 
-- Plugin for [Windows](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.6/TouchPortal.GoXLR.Plugin.Windows.tpp)
-- Plugin for [Mac OS X](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.6/TouchPortal.GoXLR.Plugin.MacOSX.tpp)
+- Plugin for [Windows](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.7.0/TouchPortal.GoXLR.Plugin.Windows.tpp)
+- Plugin for [Mac OS X](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.7.0/TouchPortal.GoXLR.Plugin.MacOSX.zip)
 
 Install tpp file from TouchPortal or unzip .tpp file to (Windows): `%appdata%\TouchPortal\plugins\GoXLR.Plugin`
 
@@ -59,10 +59,10 @@ If there is any problems, try restarting the GoXLR App.
 ### Tooling (Windows only)
 
 Tooling used for development/troubleshooting. GUI Server and Client for simulating a device or the plugin.
-Tooling needs .NET Desktop Runtime 5.0.0 from https://dotnet.microsoft.com/download/dotnet/5.0
+Tooling needs .NET 5.0 Desktop Runtime https://dotnet.microsoft.com/download/dotnet/5.0/runtime
 
-- [GoXLR Simulator](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.6/Windows.GUI.Tooling.GoXLR.Simulator.zip)
-- [Plugin Simulator](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.6/Windows.GUI.Tooling.Plugin.Simulator.zip)
+- [GoXLR Simulator](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.7.0/Windows.GUI.Tooling.GoXLR.Simulator.zip)
+- [Plugin Simulator](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases/download/v0.7.0/Windows.GUI.Tooling.Plugin.Simulator.zip)
 
 ### Known issues
 
