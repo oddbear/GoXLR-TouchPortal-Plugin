@@ -20,7 +20,9 @@ For aditional information, check the [Wiki](https://github.com/oddbear/GoXLR-Tou
 
 ### Setup:
 
-Download latest .NET 5.0 Console or Desktop Runtime from [Microsoft](https://dotnet.microsoft.com/download/dotnet/5.0/runtime)
+Download latest .NET 5.0 Console Runtime from [Microsoft](https://dotnet.microsoft.com/download/dotnet/5.0/runtime)
+
+- Only the correct runtime will work. For a plugin targeting .Net 5, only .Net runtime will work (not .Net 6, or .Net 4.x).
 
 Download the latest tpp file from [releases](https://github.com/oddbear/GoXLR-TouchPortal-Plugin/releases) (under assets):
 
