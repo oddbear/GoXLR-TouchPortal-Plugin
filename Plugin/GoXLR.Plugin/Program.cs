@@ -51,24 +51,12 @@ namespace GoXLR.TouchPortal.Plugin
 
         private static void AddTouchPortalPlugin(ServiceRegistry serviceRegistry, IConfiguration configuration)
         {
-            serviceRegistry.AddTouchPortalSdk(configuration);
-
-            serviceRegistry.ForConcreteType<GoXLRPlugin>().Configure.Singleton();
-
-            serviceRegistry.For<ITouchPortalClient>().Use(context => {
-                var plugin = context.GetInstance<GoXLRPlugin>();
-                var clientFactory = context.GetInstance<ITouchPortalClientFactory>();
-
-                return clientFactory.Create(plugin);
-            }).Singleton();
-
-            serviceRegistry
-                .For<IGoXLREventHandler>()
-                .Use<GoXLREventHandler>()
-                .Singleton();
-
             //Add General AppSettings:
             serviceRegistry.Configure<AppSettings>(configuration);
+
+            serviceRegistry.AddTouchPortalSdk(configuration);
+
+            serviceRegistry.IncludeRegistry<GoXLRPluginRegistry>();
         }
 
         private static void AddLogging(ServiceRegistry serviceRegistry, IConfiguration configuration)

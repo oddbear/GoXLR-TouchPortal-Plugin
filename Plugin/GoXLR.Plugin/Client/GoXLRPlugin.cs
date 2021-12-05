@@ -8,6 +8,10 @@ using TouchPortalSDK.Messages.Events;
 
 namespace GoXLR.TouchPortal.Plugin.Client
 {
+    /// <summary>
+    /// The plugin to communicate to and from Touch Portal.
+    /// Most state updates happens through the GoXLREventHandler.
+    /// </summary>
     public class GoXLRPlugin : ITouchPortalEventHandler
     {
         public string PluginId => Identifiers.Id;

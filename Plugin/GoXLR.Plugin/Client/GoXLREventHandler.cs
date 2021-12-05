@@ -7,6 +7,9 @@ using TouchPortalSDK.Interfaces;
 
 namespace GoXLR.TouchPortal.Plugin.Client
 {
+    /// <summary>
+    /// Translates and maps GoXLR events to Touch Portal events.
+    /// </summary>
     public class GoXLREventHandler : IGoXLREventHandler
     {
         private readonly ITouchPortalClient _client;

@@ -1,6 +1,7 @@
-﻿using GoXLR.Server.Extensions;
+﻿using GoXLR.Server.Handlers.Attributes;
+using GoXLR.Server.Handlers.Interfaces;
+using GoXLR.Server.Handlers.Models;
 using GoXLR.Server.Models;
-using Microsoft.Extensions.Logging;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,33 +9,24 @@ namespace GoXLR.Server.Handlers
 {
     public class SetRoutingStateEventHandler : INotificationHandler
     {
-        private readonly GoXLRState _state;
-        private readonly ILogger<SetRoutingStateEventHandler> _logger;
+        private readonly IGoXLREventHandler _eventHandler;
 
-        public SetRoutingStateEventHandler(
-            GoXLRState state,
-            ILogger<SetRoutingStateEventHandler> logger)
+        public SetRoutingStateEventHandler(IGoXLREventHandler eventHandler)
         {
-            _state = state;
-            _logger = logger;
+            _eventHandler = eventHandler;
         }
 
-        public async Task Handle(MessageNotification message, CancellationToken cancellationToken)
+        [Event("setState"), Action("com.tchelicon.goxlr.routingtable")]
+        public Task Handle(MessageNotification message, CancellationToken cancellationToken)
         {
-            if (message.Event != "setState")
-                return;
-
-            if (message.Action != "com.tchelicon.goxlr.routingtable")
-                return;
-
-            _logger.LogInformation("SetRoutingStateEventHandler");
-
-            var routingState = message.Payload.GetStateFromPayload();
+            var routingState = message.GetStateFromPayload();
 
             if (!Routing.TryParseContext(message.Context, out var routing))
-                return;
+                return Task.CompletedTask;
 
-            _state.EventHandler.RoutingStateChangedEvent(routing, routingState);
+            _eventHandler.RoutingStateChangedEvent(routing, routingState);
+
+            return Task.CompletedTask;
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Fleck;
-using GoXLR.Server.Handlers;
+using GoXLR.Server.Commands;
+using GoXLR.Server.Handlers.Interfaces;
 using Lamar;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,15 +10,21 @@ namespace GoXLR.Server.Configuration
 	{
 		public GoXLRServerRegistry()
 		{
+			//The server itself is a singleton, but it forks out scopes per connectetion (ex. GoXLRState):
 			ForConcreteType<GoXLRServer>().Configure.Singleton();
-			ForConcreteType<Notifier>().Configure.Scoped();
-			ForConcreteType<GoXLRState>().Configure.Scoped();
 
+			//The state is scoped to the connected client:
+			ForConcreteType<GoXLRState>().Configure.Scoped();
+			ForConcreteType<CommandHandler>().Configure.Scoped();
+
+			//Injectable, this means that we cannot know this before it is created.
+			//The creating of a socket, starts a scope, and this scope will inject it for all services later.
 			Injectable<IWebSocketConnection>();
 
+			//Adds all the 
 			Scan(scanner =>
 			{
-				scanner.Assembly(this.GetType().Assembly);
+				scanner.Assembly(typeof(INotificationHandler).Assembly);
 				scanner.AddAllTypesOf<INotificationHandler>(ServiceLifetime.Scoped);
 			});
 		}

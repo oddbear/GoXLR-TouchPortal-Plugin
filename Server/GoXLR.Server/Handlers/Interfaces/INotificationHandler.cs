@@ -1,7 +1,8 @@
-﻿using System.Threading;
+﻿using GoXLR.Server.Handlers.Models;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace GoXLR.Server.Handlers
+namespace GoXLR.Server.Handlers.Interfaces
 {
     public interface INotificationHandler
     {

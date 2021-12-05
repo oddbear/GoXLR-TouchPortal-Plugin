@@ -1,7 +1,8 @@
 ﻿using GoXLR.Server.Enums;
-using GoXLR.Server.Extensions;
+using GoXLR.Server.Handlers.Attributes;
+using GoXLR.Server.Handlers.Interfaces;
+using GoXLR.Server.Handlers.Models;
 using GoXLR.Server.Models;
-using Microsoft.Extensions.Logging;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,33 +10,24 @@ namespace GoXLR.Server.Handlers
 {
     public class SetProfileSelectedStateEventHandler : INotificationHandler
     {
-        private readonly GoXLRState _state;
-        private readonly ILogger<SetProfileSelectedStateEventHandler> _logger;
+        private readonly IGoXLREventHandler _eventHandler;
 
-        public SetProfileSelectedStateEventHandler(
-            GoXLRState state,
-            ILogger<SetProfileSelectedStateEventHandler> logger)
+        public SetProfileSelectedStateEventHandler(IGoXLREventHandler eventHandler)
         {
-            _state = state;
-            _logger = logger;
+            _eventHandler = eventHandler;
         }
 
-        public async Task Handle(MessageNotification message, CancellationToken cancellationToken)
+        [Event("setState"), Action("com.tchelicon.goxlr.profilechange")]
+        public Task Handle(MessageNotification message, CancellationToken cancellationToken)
         {
-            if (message.Event != "setState")
-                return;
-
-            if (message.Action != "com.tchelicon.goxlr.profilechange")
-                return;
-
-            _logger.LogInformation("SetProfileSelectedStateEventHandler");
-
-            var profileState = message.Payload.GetStateFromPayload();
+            var profileState = message.GetStateFromPayload();
 
             if (profileState != State.On)
-                return;
+                return Task.CompletedTask;
 
-            _state.EventHandler.ProfileSelectedChangedEvent(new Profile(message.Context));
+            _eventHandler.ProfileSelectedChangedEvent(new Profile(message.Context));
+
+            return Task.CompletedTask;
         }
     }
 }

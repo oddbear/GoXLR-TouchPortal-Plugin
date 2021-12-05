@@ -1,5 +1,6 @@
 ﻿using Fleck;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace GoXLR.Server.Commands
@@ -7,28 +8,29 @@ namespace GoXLR.Server.Commands
     public class CommandHandler
     {
         private readonly IWebSocketConnection _socket;
-        private readonly ILogger _logger;
+        private readonly ILogger<CommandHandler> _logger;
 
-        public CommandHandler(IWebSocketConnection socket, ILogger logger)
+        public CommandHandler(IWebSocketConnection socket, ILogger<CommandHandler> logger)
         {
             _socket = socket;
             _logger = logger;
         }
 
-        public async Task Send(CommandBase command)
+        public async Task Send(CommandBase command, CancellationToken cancelationToken)
         {
             foreach (var json in command.Json)
             {
-                await Send(json);
+                await Send(json, cancelationToken);
             }
         }
 
-        public async Task Send(string message)
+        private async Task Send(string message, CancellationToken cancelationToken)
         {
-            if (_socket?.IsAvailable != true)
+            if (!_socket.IsAvailable || cancelationToken.IsCancellationRequested)
                 return;
 
-            _logger.LogWarning("Send message: " + message);
+            _logger.LogDebug("Send message: " + message);
+
             await _socket?.Send(message);
         }
     }

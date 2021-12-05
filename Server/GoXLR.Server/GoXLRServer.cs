@@ -5,8 +5,7 @@ using Fleck;
 using GoXLR.Server.Commands;
 using GoXLR.Server.Configuration;
 using GoXLR.Server.Enums;
-using GoXLR.Server.Extensions;
-using GoXLR.Server.Handlers;
+using GoXLR.Server.Handlers.Models;
 using GoXLR.Server.Models;
 using Lamar;
 using Microsoft.Extensions.Logging;
@@ -21,11 +20,10 @@ namespace GoXLR.Server
         private readonly ILogger _logger;
         private readonly IContainer _container;
         private readonly WebSocketServerSettings _settings;
-        
-        public GoXLRState State { get; private set; }
 
-        private IGoXLREventHandler _eventHandler;
-        
+        private bool _started;
+        private CommandHandler _commandHandler;
+
         public const char RoutingSeparator = '|'; //TODO: Create better logic?
 
         public GoXLRServer(ILogger<GoXLRServer> logger,
@@ -35,9 +33,6 @@ namespace GoXLR.Server
             _logger = logger;
             _container = container;
             _settings = options.Value;
-
-            //var profileFetcherThread = new Thread(FetchProfilesThreadSync) { IsBackground = true };
-            //profileFetcherThread.Start();
         }
         
         /// <summary>
@@ -45,8 +40,16 @@ namespace GoXLR.Server
         /// </summary>
         public void Start()
         {
+            if (_started)
+                return;
+
+            _started = true;
+
             var server = new WebSocketServer($"ws://{_settings.IpAddress}:{_settings.Port}/?GOXLRApp");
             server.Start(OnClientConnecting);
+
+            var profileFetcherThread = new Thread(FetchProfilesThreadSync) { IsBackground = true };
+            profileFetcherThread.Start();
         }
 
         private void FetchProfilesThreadSync()
@@ -56,14 +59,15 @@ namespace GoXLR.Server
                 try
                 {
                     //Get updated profiles:
-                    State?.CommandHandler?.Send(new RequestProfilesCommand());
+                    _commandHandler?.Send(new RequestProfilesCommand(), CancellationToken.None);
                 }
                 catch (Exception exception)
                 {
                     _logger?.LogDebug(exception, "Something went wrong on the Listener Thread.");
                 }
 
-                Thread.Sleep(TimeSpan.FromSeconds(10));
+                var sleepTime = TimeSpan.FromSeconds(10);
+                Thread.Sleep(sleepTime);
             }
         }
 
@@ -73,105 +77,65 @@ namespace GoXLR.Server
         /// <param name="socket"></param>
         private void OnClientConnecting(IWebSocketConnection socket)
         {
+            //This is a new connected device, so we inject the socket and creates a scoped state around this client.
+            //If we want support for multiple clients, we can create a tracker (key:client,value:containerScope) of theese containers.
             var nestedContainerScope = _container.GetNestedContainer();
             nestedContainerScope.Inject(socket);
 
-            //Add ctor for state, socket should be here maybe?
-            var state = nestedContainerScope.GetInstance<GoXLRState>();
-            State = state; //todo: Remove (need to find a better approach).
+            _commandHandler = nestedContainerScope.GetInstance<CommandHandler>();
+            var eventHandler = nestedContainerScope.GetInstance<IGoXLREventHandler>();
 
-            //var plugin = ActivatorUtilities.CreateInstance<GoXLRPlugin>(provider);
+            var notificationHandlerRouter = nestedContainerScope.GetInstance<NotificationHandlerRouter>();
 
-            //TODO: How to get this from scope, on the ones using it by the Plugin (something needs to be removed from this class)?:
-            _eventHandler = state.EventHandler;
+            var client = socket.ConnectionInfo.ClientIpAddress;
+            eventHandler.ConnectedClientChangedEvent(new ConnectedClient(client));
 
-            var notifier = nestedContainerScope.GetInstance<Notifier>();
+            socket.OnOpen = () => _logger.LogInformation($"Connection opened {socket.ConnectionInfo.ClientIpAddress}.");
 
-            _eventHandler?.ConnectedClientChangedEvent(state.Client);
-
-            socket.OnOpen = () =>
-            {
-                _logger.LogInformation($"Connection opened {socket.ConnectionInfo.ClientIpAddress}.");
-            };
-
-            socket.OnClose = () =>
-            {
-                _logger.LogInformation($"Connection closed {socket.ConnectionInfo.ClientIpAddress}.");
-
-                //UpdateProfilesEvent?.Invoke(_profiles); //This is a list and  not a state, should we clean this up?
-                state.EventHandler?.ConnectedClientChangedEvent(ConnectedClient.Empty);
-                state.EventHandler?.ProfileSelectedChangedEvent(Profile.Empty);
-
-                //Remove tenant:
-                state.Profiles = Array.Empty<Profile>();
-                nestedContainerScope.Dispose();
-            };
-
-            socket.OnMessage = (message) =>
+            socket.OnMessage = message =>
             {
                 try
                 {
                     _logger.LogWarning("Received message: " + message);
 
-                    var document = JsonSerializer.Deserialize<JsonDocument>(message);
-                    if (document is null)
+                    if (string.IsNullOrWhiteSpace(message))
                         return;
 
-                    var root = document.RootElement;
-
-                    var propertyAction = root.GetAction();
-                    var propertyEvent = root.GetEvent();
-                    var propertyContext = root.GetContext();
-                    var propertyPayload = root.GetPayload();
-
-                    var notification = new MessageNotification
+                    var jsonSerializerOptions = new JsonSerializerOptions
                     {
-                        Action = propertyAction,
-                        Event = propertyEvent,
-                        Context = propertyContext,
-                        Payload = propertyPayload
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                     };
 
-                    _logger.LogInformation($"Handling: {propertyEvent}");
-                    notifier.Publish(notification);
+                    var notification = JsonSerializer.Deserialize<MessageNotification>(message, jsonSerializerOptions);
+                    if (notification is null)
+                        return;
 
-                    //TODO: Remove, but need to have a handled or similar state...
-                    switch (propertyEvent)
-                    {
-                        case "goxlrConnectionEvent":
-                            break;
+                    var handeled = notificationHandlerRouter.RouteToHandler(notification, CancellationToken.None)
+                        .GetAwaiter()
+                        .GetResult();
 
-                        case "getSettings"
-                            when propertyAction == "com.tchelicon.goxlr.profilechange":
-                            break;
+                    if (!handeled)
+                        _logger.LogError($"Unknown event '{notification.Event}' and action '{notification.Action}' from GoXLR.");
 
-                        case "getSettings"
-                            when propertyAction == "com.tchelicon.goxlr.routingtable":
-                            break;
-
-                        case "setState"
-                            when propertyAction == "com.tchelicon.goxlr.profilechange":
-                            break;
-
-                        case "setState"
-                            when propertyAction == "com.tchelicon.goxlr.routingtable":
-                            break;
-
-                        case "sendToPropertyInspector"
-                            when propertyAction == "com.tchelicon.goxlr.profilechange":
-                            break;
-
-                        default:
-                            _logger.LogError($"Unknown event '{propertyEvent}' and action '{propertyAction}' from GoXLR.");
-                            break;
-                    }
                 }
                 catch (Exception exception)
                 {
                     _logger.LogError(exception.ToString());
                 }
             };
-            
+
+            socket.OnClose = () =>
+            {
+                _logger.LogInformation($"Connection closed {socket.ConnectionInfo.ClientIpAddress}.");
+
+                //Cleanup goxlr client scope:
+                eventHandler.ConnectedClientChangedEvent(ConnectedClient.Empty);
+                eventHandler.ProfileSelectedChangedEvent(Profile.Empty);
+
+                _commandHandler = null;
+                nestedContainerScope.Dispose();
+            };
+
             //socket.OnBinary = ...
             //socket.OnPing = (bytes) => _logger.LogInformation("Ping: {0}", Convert.ToBase64String(bytes));
             //socket.OnPong = (bytes) => _logger.LogInformation("Pong: {0}", Convert.ToBase64String(bytes));
@@ -184,7 +148,10 @@ namespace GoXLR.Server
         /// <param name="profile"></param>
         public void SetProfile(Profile profile)
         {
-            State?.CommandHandler.Send(new SetProfileCommand(profile)).GetAwaiter().GetResult();
+            //Latest connected client wins:
+            _commandHandler?.Send(new SetProfileCommand(profile), CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
         }
 
         /// <summary>
@@ -194,32 +161,10 @@ namespace GoXLR.Server
         /// <param name="routing"></param>
         public void SetRouting(RoutingAction action, Routing routing)
         {
-            State?.CommandHandler.Send(new SetRoutingCommand(action, routing)).GetAwaiter().GetResult();
-        }
-    }
-
-    public class GoXLRState
-    {
-        private readonly IWebSocketConnection _socket;
-
-        public Profile[] Profiles { get; set; } = Array.Empty<Profile>();
-
-        public ConnectedClient Client { get; }
-
-        public IGoXLREventHandler EventHandler { get; }
-        public CommandHandler CommandHandler { get; }
-
-        public GoXLRState(
-            IWebSocketConnection socket,
-            IGoXLREventHandler eventHandler,
-            ILogger<CommandHandler> logger)
-        {
-            _socket = socket;
-            CommandHandler = new CommandHandler(socket, logger);
-            EventHandler = eventHandler;
-
-            var client = socket.ConnectionInfo.ClientIpAddress;
-            Client = new ConnectedClient(client);
+            //Latest connected client wins:
+            _commandHandler?.Send(new SetRoutingCommand(action, routing), CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
         }
     }
 }
