@@ -1,5 +1,5 @@
 ﻿using Fleck;
-using GoXLR.Server.Commands;
+using GoXLR.Server.Handlers.Commands;
 using GoXLR.Server.Handlers.Interfaces;
 using Lamar;
 using Microsoft.Extensions.DependencyInjection;

@@ -37,7 +37,7 @@ namespace GoXLR.Server.Extensions
             where TEnum : struct, Enum
         {
             return Enum.GetValues<TEnum>()
-                .Select(v => v.GetEnumDescription())
+                .Select(value => value.GetEnumDescription())
                 .ToArray();
         }
 
@@ -52,7 +52,7 @@ namespace GoXLR.Server.Extensions
             var attribute = fieldInfo?.GetCustomAttribute<DescriptionAttribute>(false);
 
             return attribute?.Description
-                   ?? throw new InvalidOperationException($"Enum '{enumType.Name}' with value '{value}' is missing the 'DescriptionAttribute'"); ;
+                   ?? throw new InvalidOperationException($"Enum '{enumType.Name}' with value '{value}' is missing the 'DescriptionAttribute'");
         }
     }
 }

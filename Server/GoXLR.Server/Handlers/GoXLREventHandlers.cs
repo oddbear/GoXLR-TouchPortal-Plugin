@@ -1,5 +1,5 @@
-﻿using GoXLR.Server.Commands;
-using GoXLR.Server.Handlers.Attributes;
+﻿using GoXLR.Server.Handlers.Attributes;
+using GoXLR.Server.Handlers.Commands;
 using GoXLR.Server.Handlers.Interfaces;
 using GoXLR.Server.Handlers.Models;
 using System.Threading;
@@ -17,7 +17,7 @@ namespace GoXLR.Server.Handlers
         }
 
         [Event("goxlrConnectionEvent")]
-        public async Task Handle(MessageNotification notification, CancellationToken cancellationToken)
+        public async Task Handle(MessageNotification message, CancellationToken cancellationToken)
         {
             //First send the respons that we have gotten the connected event, and tell that we want the states for routing.
             //All the possible states combinations are known, and we can ask for them here:

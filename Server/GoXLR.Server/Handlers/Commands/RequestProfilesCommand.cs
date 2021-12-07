@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace GoXLR.Server.Commands
+namespace GoXLR.Server.Handlers.Commands
 {
     /// <summary>
     /// Fetching profiles from the selected GoXLR App.

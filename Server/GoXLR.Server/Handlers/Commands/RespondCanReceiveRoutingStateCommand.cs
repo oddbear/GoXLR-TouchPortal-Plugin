@@ -1,30 +1,31 @@
-﻿using System.Text.Json;
-using GoXLR.Server.Enums;
+﻿using GoXLR.Server.Enums;
 using GoXLR.Server.Extensions;
 using GoXLR.Server.Models;
+using System.Text.Json;
 
-namespace GoXLR.Server.Commands
+namespace GoXLR.Server.Handlers.Commands
 {
-    internal class SetRoutingCommand : CommandBase
+    internal class RespondCanReceiveRoutingStateCommand : CommandBase
     {
-        public SetRoutingCommand(RoutingAction action, Routing routing)
+        public RespondCanReceiveRoutingStateCommand(string context, Routing routing)
         {
             var json = JsonSerializer.Serialize(new
             {
                 action = "com.tchelicon.goxlr.routingtable",
-                @event = "keyUp",
+                context = context,
+                @event = "didReceiveSettings",
                 payload = new
                 {
                     settings = new
                     {
-                        RoutingAction = action.ToString(),
+                        RoutingAction = RoutingAction.Toggle.ToString(),
                         RoutingInput = routing.Input.GetEnumDescription(),
                         RoutingOutput = routing.Output.GetEnumDescription()
                     }
                 }
             });
 
-            Json = new[] { json };
+            Json = new [] { json };
         }
     }
 }

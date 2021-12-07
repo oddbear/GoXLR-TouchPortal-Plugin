@@ -1,7 +1,7 @@
 ﻿using GoXLR.Server.Models;
 using System.Text.Json;
 
-namespace GoXLR.Server.Commands
+namespace GoXLR.Server.Handlers.Commands
 {
     internal class SubscribeToProfileStateCommand : CommandBase
     {

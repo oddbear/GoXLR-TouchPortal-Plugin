@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace GoXLR.Server.Commands
+namespace GoXLR.Server.Handlers.Commands
 {
     public class CommandHandler
     {
@@ -18,6 +18,7 @@ namespace GoXLR.Server.Commands
 
         public async Task Send(CommandBase command, CancellationToken cancelationToken)
         {
+            //Some commands needs multiple payloads:
             foreach (var json in command.Json)
             {
                 await Send(json, cancelationToken);

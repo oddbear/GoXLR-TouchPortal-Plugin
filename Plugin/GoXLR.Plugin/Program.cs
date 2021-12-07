@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using GoXLR.Server;
 using GoXLR.Server.Configuration;
-using GoXLR.Server.Models;
 using GoXLR.TouchPortal.Plugin.Client;
 using Lamar;
 using Microsoft.Extensions.Configuration;
@@ -38,7 +37,7 @@ namespace GoXLR.TouchPortal.Plugin
             container.GetInstance<ITouchPortalClient>().Connect();
             logger.LogInformation("Connected: TouchPortal client");
 
-            var plugin = container.GetInstance<GoXLRPlugin>();
+            container.GetInstance<GoXLRPlugin>();
             logger.LogInformation("Plugin is now running.");
         }
 

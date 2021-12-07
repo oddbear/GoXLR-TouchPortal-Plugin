@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text.Json;
 
-namespace GoXLR.Server.Commands
+namespace GoXLR.Server.Handlers.Commands
 {
     internal class SubscribeToRoutingStatesCommand : CommandBase
     {

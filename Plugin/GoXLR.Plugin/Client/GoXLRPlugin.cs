@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using GoXLR.Server;
 using GoXLR.TouchPortal.Plugin.Configuration;
 using GoXLR.TouchPortal.Plugin.Models;
@@ -18,12 +19,13 @@ namespace GoXLR.TouchPortal.Plugin.Client
 
         private readonly GoXLRServer _server;
         private readonly ILogger<GoXLRPlugin> _logger;
+        private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-        public GoXLRPlugin(GoXLRServer goXLRServer,
+        public GoXLRPlugin(
+            GoXLRServer server,
             ILogger<GoXLRPlugin> logger)
         {
-            //Set the event handler for GoXLR connected:
-            _server = goXLRServer;
+            _server = server;
             _logger = logger;
         }
 
@@ -34,6 +36,9 @@ namespace GoXLR.TouchPortal.Plugin.Client
 
         public void OnClosedEvent(string message)
         {
+            _cancellationTokenSource.Cancel();
+            _server.Dispose();
+
             _logger.LogInformation("Close Event: Plugin Disconnected from TouchPortal.");
             Environment.Exit(0);
         }
@@ -54,7 +59,9 @@ namespace GoXLR.TouchPortal.Plugin.Client
                     case Identifiers.RoutingTableChangeRequestedId
                         when RouteChangeModel.TryParse(message, out var routeChange):
 
-                        _server.SetRouting(routeChange.RoutingAction, routeChange.Routing);
+                        _server.SetRouting(routeChange.RoutingAction, routeChange.Routing, _cancellationTokenSource.Token)
+                            .GetAwaiter()
+                            .GetResult();
 
                         break;
 
@@ -62,7 +69,9 @@ namespace GoXLR.TouchPortal.Plugin.Client
                     case Identifiers.ProfileChangeRequestedId
                         when ProfileChangeModel.TryParse(message, out var profileChange):
 
-                        _server.SetProfile(profileChange.Profile);
+                        _server.SetProfile(profileChange.Profile, _cancellationTokenSource.Token)
+                            .GetAwaiter()
+                            .GetResult();
 
                         break;
 

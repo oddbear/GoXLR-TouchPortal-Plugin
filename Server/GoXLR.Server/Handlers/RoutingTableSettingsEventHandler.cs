@@ -1,5 +1,5 @@
-﻿using GoXLR.Server.Commands;
-using GoXLR.Server.Handlers.Attributes;
+﻿using GoXLR.Server.Handlers.Attributes;
+using GoXLR.Server.Handlers.Commands;
 using GoXLR.Server.Handlers.Interfaces;
 using GoXLR.Server.Handlers.Models;
 using GoXLR.Server.Models;

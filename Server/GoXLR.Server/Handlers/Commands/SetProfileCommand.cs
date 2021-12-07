@@ -1,26 +1,26 @@
 ﻿using System.Text.Json;
+using GoXLR.Server.Models;
 
-namespace GoXLR.Server.Commands
+namespace GoXLR.Server.Handlers.Commands
 {
-    internal class RespondCanReceiveProfileStateCommand : CommandBase
+    internal class SetProfileCommand : CommandBase
     {
-        public RespondCanReceiveProfileStateCommand(string profileName)
+        public SetProfileCommand(Profile profile)
         {
             var json = JsonSerializer.Serialize(new
             {
                 action = "com.tchelicon.goxlr.profilechange",
-                context = profileName,
-                @event = "didReceiveSettings",
+                @event = "keyUp",
                 payload = new
                 {
                     settings = new
                     {
-                        SelectedProfile = profileName
+                        SelectedProfile = profile.Name
                     }
                 }
             });
 
-            Json = new [] { json };
+            Json = new[] { json };
         }
     }
 }

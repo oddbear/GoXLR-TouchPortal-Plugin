@@ -1,4 +1,4 @@
-﻿namespace GoXLR.Server.Commands
+﻿namespace GoXLR.Server.Handlers.Commands
 {
     public class CommandBase
     {

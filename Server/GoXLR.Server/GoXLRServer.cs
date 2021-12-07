@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Text.Json;
 using System.Threading;
+using System.Threading.Tasks;
 using Fleck;
-using GoXLR.Server.Commands;
 using GoXLR.Server.Configuration;
 using GoXLR.Server.Enums;
+using GoXLR.Server.Handlers.Commands;
 using GoXLR.Server.Handlers.Models;
 using GoXLR.Server.Models;
 using Lamar;
@@ -13,20 +14,20 @@ using Microsoft.Extensions.Options;
 
 namespace GoXLR.Server
 {
-    // ReSharper disable InconsistentNaming
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "This is they we write it.")]
-    public class GoXLRServer
+    public sealed class GoXLRServer : IDisposable
     {
         private readonly ILogger _logger;
         private readonly IContainer _container;
         private readonly WebSocketServerSettings _settings;
 
         private bool _started;
-        private CommandHandler _commandHandler;
+        private WebSocketServer _webSocketServer;
+        private INestedContainer _lastConnection;
 
         public const char RoutingSeparator = '|'; //TODO: Create better logic?
 
-        public GoXLRServer(ILogger<GoXLRServer> logger,
+        public GoXLRServer(
+            ILogger<GoXLRServer> logger,
             IOptions<WebSocketServerSettings> options,
             IContainer container)
         {
@@ -45,8 +46,8 @@ namespace GoXLR.Server
 
             _started = true;
 
-            var server = new WebSocketServer($"ws://{_settings.IpAddress}:{_settings.Port}/?GOXLRApp");
-            server.Start(OnClientConnecting);
+            _webSocketServer = new WebSocketServer($"ws://{_settings.IpAddress}:{_settings.Port}/?GOXLRApp");
+            _webSocketServer.Start(OnClientConnecting);
 
             var profileFetcherThread = new Thread(FetchProfilesThreadSync) { IsBackground = true };
             profileFetcherThread.Start();
@@ -58,8 +59,12 @@ namespace GoXLR.Server
             {
                 try
                 {
+                    var commandHandler = _lastConnection?.GetInstance<CommandHandler>();
+
                     //Get updated profiles:
-                    _commandHandler?.Send(new RequestProfilesCommand(), CancellationToken.None);
+                    commandHandler?.Send(new RequestProfilesCommand(), CancellationToken.None)
+                        .GetAwaiter()
+                        .GetResult();
                 }
                 catch (Exception exception)
                 {
@@ -77,13 +82,15 @@ namespace GoXLR.Server
         /// <param name="socket"></param>
         private void OnClientConnecting(IWebSocketConnection socket)
         {
+            var eventHandler = _container.GetInstance<IGoXLREventHandler>();
+
             //This is a new connected device, so we inject the socket and creates a scoped state around this client.
             //If we want support for multiple clients, we can create a tracker (key:client,value:containerScope) of theese containers.
             var nestedContainerScope = _container.GetNestedContainer();
             nestedContainerScope.Inject(socket);
 
-            _commandHandler = nestedContainerScope.GetInstance<CommandHandler>();
-            var eventHandler = nestedContainerScope.GetInstance<IGoXLREventHandler>();
+            //Set a ready container to be the last connected client:
+            _lastConnection = nestedContainerScope;
 
             var notificationHandlerRouter = nestedContainerScope.GetInstance<NotificationHandlerRouter>();
 
@@ -132,13 +139,10 @@ namespace GoXLR.Server
                 eventHandler.ConnectedClientChangedEvent(ConnectedClient.Empty);
                 eventHandler.ProfileSelectedChangedEvent(Profile.Empty);
 
-                _commandHandler = null;
+                _lastConnection = null;
                 nestedContainerScope.Dispose();
             };
 
-            //socket.OnBinary = ...
-            //socket.OnPing = (bytes) => _logger.LogInformation("Ping: {0}", Convert.ToBase64String(bytes));
-            //socket.OnPong = (bytes) => _logger.LogInformation("Pong: {0}", Convert.ToBase64String(bytes));
             socket.OnError = (exception) => _logger.LogError(exception.ToString());
         }
 
@@ -146,12 +150,14 @@ namespace GoXLR.Server
         /// Sets a profile in the selected GoXLR App.
         /// </summary>
         /// <param name="profile"></param>
-        public void SetProfile(Profile profile)
+        public async Task SetProfile(Profile profile, CancellationToken cancellationToken)
         {
+            var commandHandler = _lastConnection?.GetInstance<CommandHandler>();
+            if (commandHandler is null)
+                return;
+
             //Latest connected client wins:
-            _commandHandler?.Send(new SetProfileCommand(profile), CancellationToken.None)
-                .GetAwaiter()
-                .GetResult();
+            await commandHandler.Send(new SetProfileCommand(profile), cancellationToken);
         }
 
         /// <summary>
@@ -159,12 +165,19 @@ namespace GoXLR.Server
         /// </summary>
         /// <param name="action"></param>
         /// <param name="routing"></param>
-        public void SetRouting(RoutingAction action, Routing routing)
+        public async Task SetRouting(RoutingAction action, Routing routing, CancellationToken cancellationToken)
         {
+            var commandHandler = _lastConnection?.GetInstance<CommandHandler>();
+            if (commandHandler is null)
+                return;
+
             //Latest connected client wins:
-            _commandHandler?.Send(new SetRoutingCommand(action, routing), CancellationToken.None)
-                .GetAwaiter()
-                .GetResult();
+            await commandHandler.Send(new SetRoutingCommand(action, routing), cancellationToken);
+        }
+
+        public void Dispose()
+        {
+            _webSocketServer?.Dispose();
         }
     }
 }
