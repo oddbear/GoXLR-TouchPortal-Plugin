@@ -30,7 +30,7 @@ namespace GoXLR.Server.Handlers.Commands
             if (!_socket.IsAvailable || cancelationToken.IsCancellationRequested)
                 return;
 
-            _logger.LogDebug("Send message: " + message);
+            _logger.LogDebug($"Send message: {message}");
 
             await _socket?.Send(message);
         }

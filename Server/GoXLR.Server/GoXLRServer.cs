@@ -68,7 +68,7 @@ namespace GoXLR.Server
                 }
                 catch (Exception exception)
                 {
-                    _logger?.LogDebug(exception, "Something went wrong on the Listener Thread.");
+                    _logger.LogError(exception, "Something went wrong on the Listener Thread.");
                 }
 
                 var sleepTime = TimeSpan.FromSeconds(10);
@@ -103,7 +103,7 @@ namespace GoXLR.Server
             {
                 try
                 {
-                    _logger.LogWarning("Received message: " + message);
+                    _logger.LogInformation($"Received message: {message}");
 
                     if (string.IsNullOrWhiteSpace(message))
                         return;
@@ -122,12 +122,12 @@ namespace GoXLR.Server
                         .GetResult();
 
                     if (!handeled)
-                        _logger.LogError($"Unknown event '{notification.Event}' and action '{notification.Action}' from GoXLR.");
+                        _logger.LogInformation($"Unknown event '{notification.Event}' and action '{notification.Action}' from GoXLR.");
 
                 }
                 catch (Exception exception)
                 {
-                    _logger.LogError(exception.ToString());
+                    _logger.LogError(exception, "Failed on processing from message from the GoXLR App.");
                 }
             };
 
@@ -143,7 +143,7 @@ namespace GoXLR.Server
                 nestedContainerScope.Dispose();
             };
 
-            socket.OnError = (exception) => _logger.LogError(exception.ToString());
+            socket.OnError = exception => _logger.LogError(exception, "WebSocket OnError.");
         }
 
         /// <summary>
