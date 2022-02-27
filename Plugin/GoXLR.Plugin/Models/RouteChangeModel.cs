@@ -1,5 +1,6 @@
 ﻿using System;
 using GoXLR.Server.Enums;
+using GoXLR.Server.Extensions;
 using GoXLR.Server.Models;
 using GoXLR.TouchPortal.Plugin.Configuration;
 using TouchPortalSDK.Messages.Events;
@@ -29,7 +30,7 @@ namespace GoXLR.TouchPortal.Plugin.Models
 
                 var action = message[Identifiers.RoutingTableChangeRequestedId + ".data.actions"];
 
-                if (!Enum.TryParse<RoutingAction>(action, out var routingAction))
+                if (!EnumExtensions.TryParseEnumFromDescription<RoutingAction>(action, out var routingAction))
                     return false;
 
                 var input = message[Identifiers.RoutingTableChangeRequestedId + ".data.inputs"];

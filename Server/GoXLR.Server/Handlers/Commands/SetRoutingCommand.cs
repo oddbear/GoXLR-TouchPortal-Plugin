@@ -17,7 +17,7 @@ namespace GoXLR.Server.Handlers.Commands
                 {
                     settings = new
                     {
-                        RoutingAction = action.ToString(),
+                        RoutingAction = action.GetEnumDescription(),
                         RoutingInput = routing.Input.GetEnumDescription(),
                         RoutingOutput = routing.Output.GetEnumDescription()
                     }
