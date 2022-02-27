@@ -1,18 +1,18 @@
 {
   "sdk": 4,
-  "version": 7,
+  "version": 17,
   "name": "GoXLR TouchPortal Plugin",
   "id": "oddbear.touchportal.goxlr",
   "configuration": {
     "colorDark": "#59B1B6",
     "colorLight": "#59B1B6"
   },
-  "plugin_start_cmd": "\"%TP_PLUGIN_FOLDER%GoXLR.Plugin\\GoXLR.Plugin.exe\"",
+  "plugin_start_cmd": "\"%TP_PLUGIN_FOLDER%GoXLR.TouchPortal.Plugin\\GoXLR.TouchPortal.Plugin.exe\"",
   "categories": [
     {
       "id": "oddbear.touchportal.goxlr",
       "name": "GoXLR",
-      "imagepath": "%TP_PLUGIN_FOLDER%GoXLR.Plugin\\logo.png",
+      "imagepath": "%TP_PLUGIN_FOLDER%GoXLR.TouchPortal.Plugin\\logo.png",
       "actions": [
         {
           "id": "oddbear.touchportal.goxlr.routingtable.action.change",
